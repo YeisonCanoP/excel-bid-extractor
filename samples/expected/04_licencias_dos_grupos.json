@@ -1,0 +1,209 @@
+{
+  "file_name": "04_licencias_dos_grupos.xlsx",
+  "principal": [
+    "Revisión aritmética"
+  ],
+  "apoyo": [],
+  "quotations": {
+    "Revisión aritmética": 10
+  },
+  "findings": {
+    "Revisión aritmética": []
+  },
+  "maps": {
+    "Revisión aritmética": {
+      "status": "complete",
+      "currency": {
+        "code": "COP",
+        "evidence": []
+      },
+      "iva_included": {
+        "value": null,
+        "evidence": []
+      },
+      "budget": null,
+      "tables": [
+        {
+          "table_id": "t1",
+          "group": "1",
+          "title_address": null,
+          "site_address": null,
+          "header_rows": [
+            7,
+            8
+          ],
+          "item_rows": {
+            "first": 9,
+            "last": 11
+          },
+          "item_columns": {
+            "item_no": "A",
+            "description": "B",
+            "detail": [],
+            "unit": null,
+            "tariff_type": "C",
+            "quantity": [
+              "D",
+              "E"
+            ]
+          },
+          "providers": [
+            {
+              "name_address": "F7",
+              "columns": {
+                "brand": null,
+                "unit_price": "F",
+                "total_price": "G",
+                "unit_price_corrected": "H",
+                "total_price_corrected": "I",
+                "subtotal": null,
+                "aiu": null,
+                "iva": null,
+                "factor": null,
+                "check": "J"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "G13",
+                  "corrected": "I13",
+                  "check": "J13",
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "K7",
+              "columns": {
+                "brand": null,
+                "unit_price": "K",
+                "total_price": "L",
+                "unit_price_corrected": "M",
+                "total_price_corrected": "N",
+                "subtotal": null,
+                "aiu": null,
+                "iva": null,
+                "factor": null,
+                "check": "O"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "L13",
+                  "corrected": "N13",
+                  "check": "O13",
+                  "rate": null
+                }
+              ]
+            }
+          ],
+          "confidence": 1.0
+        },
+        {
+          "table_id": "t2",
+          "group": "2",
+          "title_address": null,
+          "site_address": null,
+          "header_rows": [
+            16,
+            17
+          ],
+          "item_rows": {
+            "first": 18,
+            "last": 19
+          },
+          "item_columns": {
+            "item_no": "A",
+            "description": "B",
+            "detail": [],
+            "unit": null,
+            "tariff_type": "C",
+            "quantity": [
+              "D",
+              "E"
+            ]
+          },
+          "providers": [
+            {
+              "name_address": "F16",
+              "columns": {
+                "brand": null,
+                "unit_price": "F",
+                "total_price": "G",
+                "unit_price_corrected": "H",
+                "total_price_corrected": "I",
+                "subtotal": null,
+                "aiu": null,
+                "iva": null,
+                "factor": null,
+                "check": "J"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "G21",
+                  "corrected": "I21",
+                  "check": "J21",
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "K16",
+              "columns": {
+                "brand": null,
+                "unit_price": "K",
+                "total_price": "L",
+                "unit_price_corrected": "M",
+                "total_price_corrected": "N",
+                "subtotal": null,
+                "aiu": null,
+                "iva": null,
+                "factor": null,
+                "check": "O"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "L21",
+                  "corrected": "N21",
+                  "check": "O21",
+                  "rate": null
+                }
+              ]
+            }
+          ],
+          "confidence": 1.0
+        }
+      ],
+      "sheet_totals": [
+        {
+          "kind": "total",
+          "label_address": null,
+          "offered": "G24",
+          "corrected": "I24",
+          "check": null,
+          "rate": null,
+          "name_address": "F7"
+        },
+        {
+          "kind": "total",
+          "label_address": null,
+          "offered": "L24",
+          "corrected": "N24",
+          "check": null,
+          "rate": null,
+          "name_address": "K7"
+        }
+      ],
+      "missing_fields": [],
+      "confidence": 1.0,
+      "warnings": [],
+      "requires_human_review": false
+    }
+  }
+}

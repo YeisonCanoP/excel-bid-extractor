@@ -1,0 +1,189 @@
+{
+  "file_name": "03_consultoria_bloques_desiguales.xlsx",
+  "principal": [
+    "Evaluación oferta económica"
+  ],
+  "apoyo": [],
+  "quotations": {
+    "Evaluación oferta económica": 12
+  },
+  "findings": {
+    "Evaluación oferta económica": [
+      "R11"
+    ]
+  },
+  "maps": {
+    "Evaluación oferta económica": {
+      "status": "complete",
+      "currency": {
+        "code": "COP",
+        "evidence": []
+      },
+      "iva_included": {
+        "value": null,
+        "evidence": []
+      },
+      "budget": {
+        "address": "C19",
+        "label_address": "C18"
+      },
+      "tables": [
+        {
+          "table_id": "t1",
+          "group": null,
+          "title_address": null,
+          "site_address": null,
+          "header_rows": [
+            7,
+            8
+          ],
+          "item_rows": {
+            "first": 9,
+            "last": 12
+          },
+          "item_columns": {
+            "item_no": null,
+            "description": "C",
+            "detail": [],
+            "unit": "D",
+            "tariff_type": null,
+            "quantity": [
+              "E"
+            ]
+          },
+          "providers": [
+            {
+              "name_address": "F7",
+              "columns": {
+                "brand": null,
+                "unit_price": "F",
+                "total_price": null,
+                "unit_price_corrected": null,
+                "total_price_corrected": "G",
+                "subtotal": null,
+                "aiu": null,
+                "iva": null,
+                "factor": null,
+                "check": null
+              },
+              "totals": [
+                {
+                  "kind": "subtotal",
+                  "label_address": null,
+                  "offered": "F14",
+                  "corrected": "G14",
+                  "check": null,
+                  "rate": null
+                },
+                {
+                  "kind": "iva",
+                  "label_address": null,
+                  "offered": "F15",
+                  "corrected": "G15",
+                  "check": null,
+                  "rate": null
+                },
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "F16",
+                  "corrected": "G16",
+                  "check": null,
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "H7",
+              "columns": {
+                "brand": null,
+                "unit_price": null,
+                "total_price": "H",
+                "unit_price_corrected": null,
+                "total_price_corrected": "I",
+                "subtotal": null,
+                "aiu": null,
+                "iva": null,
+                "factor": null,
+                "check": null
+              },
+              "totals": [
+                {
+                  "kind": "subtotal",
+                  "label_address": null,
+                  "offered": "H14",
+                  "corrected": "I14",
+                  "check": null,
+                  "rate": null
+                },
+                {
+                  "kind": "iva",
+                  "label_address": null,
+                  "offered": "H15",
+                  "corrected": "I15",
+                  "check": null,
+                  "rate": null
+                },
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "H16",
+                  "corrected": "I16",
+                  "check": null,
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "J7",
+              "columns": {
+                "brand": null,
+                "unit_price": null,
+                "total_price": "J",
+                "unit_price_corrected": null,
+                "total_price_corrected": "K",
+                "subtotal": null,
+                "aiu": null,
+                "iva": null,
+                "factor": null,
+                "check": null
+              },
+              "totals": [
+                {
+                  "kind": "subtotal",
+                  "label_address": null,
+                  "offered": "J14",
+                  "corrected": "K14",
+                  "check": null,
+                  "rate": null
+                },
+                {
+                  "kind": "iva",
+                  "label_address": null,
+                  "offered": "J15",
+                  "corrected": "K15",
+                  "check": null,
+                  "rate": null
+                },
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "J16",
+                  "corrected": "K16",
+                  "check": null,
+                  "rate": null
+                }
+              ]
+            }
+          ],
+          "confidence": 1.0
+        }
+      ],
+      "sheet_totals": [],
+      "missing_fields": [],
+      "confidence": 1.0,
+      "warnings": [],
+      "requires_human_review": false
+    }
+  }
+}

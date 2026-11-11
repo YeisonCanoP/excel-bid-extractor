@@ -50,13 +50,15 @@ copy .env.example .env      # completar FOUNDRY_RESOURCE y FOUNDRY_API_KEY
 docker compose up -d        # MongoDB en localhost:27017
 ```
 
-Los Excel de entrada van en `scripts/fixture/` (ignorados en git: son datos reales). Ninguno viene con el repositorio.
+El repositorio trae cuatro libros de muestra con datos inventados en `samples/` (ver [Libros de muestra](#libros-de-muestra)).
+Tus propios Excel van en `scripts/fixture/`, que está ignorada en git.
 
 ## Uso
 
 ```powershell
 make up       # MongoDB
-make run      # procesa los Excel pendientes de la carpeta
+make demo     # procesa los libros de muestra (samples/)
+make run      # procesa los Excel pendientes de INPUT_DIR
 make fresh    # borra la base y procesa todo desde cero
 make status   # tabla de resultados (también con solo "make")
 ```
@@ -130,6 +132,22 @@ Hay dos tipos que no significan lo mismo:
 | R10 | Integridad | La suma de las tablas da el total de la oferta |
 | R11 | Hallazgo | Un total ofertado difiere del corregido |
 
+## Libros de muestra
+
+`samples/` trae cuatro libros generados por código (`make samples` o `uv run python -m scripts.samples`), con
+datos inventados y semilla fija. Cada uno cubre un patrón distinto y trae errores sembrados a propósito:
+
+| Libro | Patrón | Errores sembrados |
+|---|---|---|
+| `01_suministro_equipos_usd` | Bloques por proveedor en USD, "NO COTIZA", bloque INVITADO, plantilla oculta vacía, hoja de apoyo | Un total mal multiplicado (R1), un precio en 0 (R9), redondeos (R5, R11) |
+| `02_servicios_aseo_aiu` | Un grupo por hoja, AIU e IVA por ítem, bloque oculto de un proveedor que no ofertó, totales parciales | Redondeos (R11) |
+| `03_consultoria_bloques_desiguales` | Solo un proveedor trae unitario; los demás, solo total | Un IVA con un dígito de menos (R11) |
+| `04_licencias_dos_grupos` | Dos tablas en una hoja (una por grupo), dos columnas de cantidad, total de la hoja | — |
+
+Las fórmulas se guardan con su resultado ya calculado (XlsxWriter), como si Excel las hubiera guardado.
+`samples/expected/` tiene, por libro, las hojas por rol, el mapa de celdas correcto, el número de cotizaciones
+y los hallazgos esperados. `tests/test_samples.py` corre todo el flujo sobre ellos, sin MongoDB ni IA.
+
 ## Estructura
 
 Arquitectura en capas: cada carpeta tiene una sola responsabilidad y solo `pipeline.py` las combina.
@@ -152,7 +170,9 @@ app/
 │   ├── extractor.py      orquesta la extracción de una hoja
 │   └── rules/            R1–R11 por ítem, por tabla y por hoja
 └── storage/            MongoDB: conexión, índices y repositorios
-tests/                  pruebas unitarias con hojas creadas en memoria
+scripts/samples/        generador de los libros de muestra y su resultado esperado
+samples/                libros de muestra (.xlsx) y expected/ (resultado esperado en JSON)
+tests/                  pruebas unitarias y de punta a punta sobre los libros de muestra
 ```
 
 ## MongoDB
@@ -180,4 +200,4 @@ tests/                  pruebas unitarias con hojas creadas en memoria
 ## Stack
 
 Python 3.13 · uv · openpyxl · pydantic v2 · MongoDB 7 · SDK `anthropic` (`AnthropicFoundry`, structured outputs) ·
-typer · pytest · ruff · pyrefly
+typer · pytest · ruff · pyrefly · XlsxWriter (libros de muestra)

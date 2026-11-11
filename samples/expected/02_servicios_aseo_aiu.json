@@ -1,0 +1,355 @@
+{
+  "file_name": "02_servicios_aseo_aiu.xlsx",
+  "principal": [
+    "REV ARIT GRUPO 1",
+    "REV ARIT GRUPO 2"
+  ],
+  "apoyo": [
+    "Servicios ocasionales"
+  ],
+  "quotations": {
+    "REV ARIT GRUPO 1": 12,
+    "REV ARIT GRUPO 2": 12
+  },
+  "findings": {
+    "REV ARIT GRUPO 1": [
+      "R11"
+    ],
+    "REV ARIT GRUPO 2": [
+      "R11"
+    ]
+  },
+  "maps": {
+    "REV ARIT GRUPO 1": {
+      "status": "complete",
+      "currency": {
+        "code": "COP",
+        "evidence": []
+      },
+      "iva_included": {
+        "value": null,
+        "evidence": []
+      },
+      "budget": null,
+      "tables": [
+        {
+          "table_id": "t1",
+          "group": null,
+          "title_address": null,
+          "site_address": null,
+          "header_rows": [
+            7,
+            8
+          ],
+          "item_rows": {
+            "first": 9,
+            "last": 11
+          },
+          "item_columns": {
+            "item_no": "A",
+            "description": "C",
+            "detail": [],
+            "unit": null,
+            "tariff_type": null,
+            "quantity": [
+              "D"
+            ]
+          },
+          "providers": [
+            {
+              "name_address": "E7",
+              "columns": {
+                "brand": null,
+                "unit_price": "E",
+                "total_price": "I",
+                "unit_price_corrected": "J",
+                "total_price_corrected": "K",
+                "subtotal": "F",
+                "aiu": "G",
+                "iva": "H",
+                "factor": null,
+                "check": "L"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "I13",
+                  "corrected": "K13",
+                  "check": "L13",
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "M7",
+              "columns": {
+                "brand": null,
+                "unit_price": "M",
+                "total_price": "Q",
+                "unit_price_corrected": "R",
+                "total_price_corrected": "S",
+                "subtotal": "N",
+                "aiu": "O",
+                "iva": "P",
+                "factor": null,
+                "check": "T"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "Q13",
+                  "corrected": "S13",
+                  "check": "T13",
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "U7",
+              "columns": {
+                "brand": null,
+                "unit_price": "U",
+                "total_price": "Y",
+                "unit_price_corrected": "Z",
+                "total_price_corrected": "AA",
+                "subtotal": "V",
+                "aiu": "W",
+                "iva": "X",
+                "factor": null,
+                "check": "AB"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "Y13",
+                  "corrected": "AA13",
+                  "check": "AB13",
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "AC7",
+              "columns": {
+                "brand": null,
+                "unit_price": "AC",
+                "total_price": "AG",
+                "unit_price_corrected": "AH",
+                "total_price_corrected": "AI",
+                "subtotal": "AD",
+                "aiu": "AE",
+                "iva": "AF",
+                "factor": null,
+                "check": "AJ"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "AG13",
+                  "corrected": "AI13",
+                  "check": "AJ13",
+                  "rate": null
+                }
+              ]
+            }
+          ],
+          "confidence": 1.0
+        }
+      ],
+      "sheet_totals": [],
+      "missing_fields": [],
+      "confidence": 1.0,
+      "warnings": [],
+      "requires_human_review": false
+    },
+    "REV ARIT GRUPO 2": {
+      "status": "complete",
+      "currency": {
+        "code": "COP",
+        "evidence": []
+      },
+      "iva_included": {
+        "value": null,
+        "evidence": []
+      },
+      "budget": null,
+      "tables": [
+        {
+          "table_id": "t1",
+          "group": null,
+          "title_address": null,
+          "site_address": null,
+          "header_rows": [
+            7,
+            8
+          ],
+          "item_rows": {
+            "first": 9,
+            "last": 12
+          },
+          "item_columns": {
+            "item_no": "A",
+            "description": "C",
+            "detail": [],
+            "unit": null,
+            "tariff_type": null,
+            "quantity": [
+              "D"
+            ]
+          },
+          "providers": [
+            {
+              "name_address": "E7",
+              "columns": {
+                "brand": null,
+                "unit_price": "E",
+                "total_price": "I",
+                "unit_price_corrected": "J",
+                "total_price_corrected": "K",
+                "subtotal": "F",
+                "aiu": "G",
+                "iva": "H",
+                "factor": null,
+                "check": "L"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "I14",
+                  "corrected": "K14",
+                  "check": "L14",
+                  "rate": null
+                },
+                {
+                  "kind": "partial",
+                  "label_address": null,
+                  "offered": "I16",
+                  "corrected": "K16",
+                  "check": "L16",
+                  "rate": null
+                },
+                {
+                  "kind": "partial",
+                  "label_address": null,
+                  "offered": "I17",
+                  "corrected": "K17",
+                  "check": "L17",
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "M7",
+              "columns": {
+                "brand": null,
+                "unit_price": "M",
+                "total_price": "Q",
+                "unit_price_corrected": "R",
+                "total_price_corrected": "S",
+                "subtotal": "N",
+                "aiu": "O",
+                "iva": "P",
+                "factor": null,
+                "check": "T"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "Q14",
+                  "corrected": "S14",
+                  "check": "T14",
+                  "rate": null
+                },
+                {
+                  "kind": "partial",
+                  "label_address": null,
+                  "offered": "Q16",
+                  "corrected": "S16",
+                  "check": "T16",
+                  "rate": null
+                },
+                {
+                  "kind": "partial",
+                  "label_address": null,
+                  "offered": "Q17",
+                  "corrected": "S17",
+                  "check": "T17",
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "U7",
+              "columns": {
+                "brand": null,
+                "unit_price": "U",
+                "total_price": "Y",
+                "unit_price_corrected": "Z",
+                "total_price_corrected": "AA",
+                "subtotal": "V",
+                "aiu": "W",
+                "iva": "X",
+                "factor": null,
+                "check": "AB"
+              },
+              "totals": [
+                {
+                  "kind": "total",
+                  "label_address": null,
+                  "offered": "Y14",
+                  "corrected": "AA14",
+                  "check": "AB14",
+                  "rate": null
+                },
+                {
+                  "kind": "partial",
+                  "label_address": null,
+                  "offered": "Y16",
+                  "corrected": "AA16",
+                  "check": "AB16",
+                  "rate": null
+                },
+                {
+                  "kind": "partial",
+                  "label_address": null,
+                  "offered": "Y17",
+                  "corrected": "AA17",
+                  "check": "AB17",
+                  "rate": null
+                }
+              ]
+            },
+            {
+              "name_address": "AC7",
+              "columns": {
+                "brand": null,
+                "unit_price": "AC",
+                "total_price": "AG",
+                "unit_price_corrected": "AH",
+                "total_price_corrected": "AI",
+                "subtotal": "AD",
+                "aiu": "AE",
+                "iva": "AF",
+                "factor": null,
+                "check": "AJ"
+              },
+              "totals": []
+            }
+          ],
+          "confidence": 1.0
+        }
+      ],
+      "sheet_totals": [],
+      "missing_fields": [],
+      "confidence": 1.0,
+      "warnings": [],
+      "requires_human_review": false
+    }
+  }
+}
