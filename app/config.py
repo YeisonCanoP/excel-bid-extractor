@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     effort_classify: Literal["low", "medium", "high"] = "low"
     max_tokens: int = 4096
     """Tope de la respuesta (no se cobra el tope, solo lo generado). Valores muy altos obligan a usar streaming."""
-    prompt_version: str = "classify-v3"
+    prompt_version: str = "classify-v4"
     """Archivo de app/ai/prompts/ con las instrucciones (classify-v3 -> classify_v3.md)."""
 
     # Mapa de celdas

@@ -12,7 +12,14 @@ from xlsxwriter.workbook import Workbook
 from app.domain.cell_map import Budget, SheetTotal
 from scripts.samples.expected import SampleBook, cell_map
 from scripts.samples.model import NO_OFFER, Item, Layout, Offer, Provider
-from scripts.samples.sheets import Process, write_empty_template, write_fillers, write_support_sheet, write_title
+from scripts.samples.sheets import (
+    Process,
+    write_empty_template,
+    write_fillers,
+    write_support_sheet,
+    write_tariff_sheet,
+    write_title,
+)
 from scripts.samples.table import TableResult, write_table
 from scripts.samples.totals import sheet_total
 from scripts.samples.writer import SheetWriter, new_workbook
@@ -83,6 +90,8 @@ SERVICE_GROUPS = {
 }
 SERVICE_BASES = [3_200_000.0, 3_650_000.0, 5_400_000.0, 2_900_000.0]
 SERVICE_PROVIDERS = ["ACME ANDINA SAS", "BETA INDUSTRIAL SAS", "GAMMA SERVICIOS LTDA", "DELTA LIMPIEZA SAS"]
+OCCASIONAL_SERVICES = ["Jornada adicional de aseo", "Lavado de fachada", "Desinfección de áreas", "Limpieza de vidrios"]
+OCCASIONAL_BASES = [180_000.0, 2_400_000.0, 650_000.0, 420_000.0]
 
 
 def _service_providers(group: str, items: list[Item]) -> list[Provider]:
@@ -112,8 +121,9 @@ def build_services(folder: Path) -> SampleBook:
     with new_workbook(folder / book.file_name) as workbook:
         for group in SERVICE_GROUPS:
             _write_service_group(workbook, book, group)
-        write_support_sheet(workbook, "Servicios ocasionales", "REVISIÓN ARITMÉTICA - SERVICIOS OCASIONALES",
-                            [("Jornada adicional de aseo", "Por día", 1), ("Lavado de fachada", "Por servicio", 1)])
+        tariffs = {name: _prices(40 + i, OCCASIONAL_BASES, 0) for i, name in enumerate(SERVICE_PROVIDERS)}
+        write_tariff_sheet(workbook, "Servicios ocasionales", "REVISIÓN ARITMÉTICA - SERVICIOS OCASIONALES",
+                           OCCASIONAL_SERVICES, tariffs)
         write_fillers(workbook, SERVICES, SERVICE_PROVIDERS)
     book.apoyo.append("Servicios ocasionales")
     return book
@@ -160,6 +170,7 @@ LICENSE_TABLES = {
     "2": [Item("Licencia de gestión de proyectos", (16, 12), tariff_type="USUARIO MES"),
           Item("Licencia de visor de planos", (16, 12), tariff_type="USUARIO MES")],
 }
+LICENSE_TITLES = {"1": "GRUPO 1 - SEDE PRINCIPAL", "2": "GRUPO 2 - SEDE REGIONAL"}
 LICENSE_PROVIDERS = {
     "ACME ANDINA SAS": [500_000.0, 45_000.0, 840_000.0],
     "BETA SOFTWARE SAS": [511_125.0, 46_466.0, 851_874.0],
@@ -171,7 +182,8 @@ def _license_table(w: SheetWriter, group: str, first_row: int) -> TableResult:
     providers = [Provider(name, PLAIN_ROLES, _offers(prices[:len(items)]))
                  for name, prices in LICENSE_PROVIDERS.items()]
     layout = Layout(f"t{group}", first_row, {"item_no": "A", "description": "B", "tariff_type": "C"}, ("D", "E"),
-                    ("CANTIDAD USUARIOS", "CANTIDAD MESES"), "F", "COP", totals=("total",), group=group)
+                    ("CANTIDAD USUARIOS", "CANTIDAD MESES"), "F", "COP", totals=("total",), group=group,
+                    title=LICENSE_TITLES[group])
     return write_table(w, layout, items, providers)
 
 
@@ -180,8 +192,8 @@ def build_licenses(folder: Path) -> SampleBook:
     with new_workbook(folder / book.file_name) as workbook:
         w = SheetWriter(workbook, "Revisión aritmética")
         write_title(w, LICENSES, ARITHMETIC_REVIEW)
-        first = _license_table(w, "1", 9)
-        second = _license_table(w, "2", first.last_row + 3)
+        first = _license_table(w, "1", 10)
+        second = _license_table(w, "2", first.last_row + 4)
         totals = _write_offer_totals(w, first, second)
         sheet_map = cell_map("COP", [first.table, second.table], sheet_totals=totals)
         book.add_principal(w.name, sheet_map, first.quotations + second.quotations, [])

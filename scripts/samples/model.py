@@ -72,6 +72,8 @@ class Layout:
     aiu: bool = False
     iva_rate_cell: bool = False
     """Escribe la tasa (0,19) junto al IVA, en la columna del unitario."""
+    title: str | None = None
+    """Título de la tabla (p. ej. su grupo), dos filas arriba del encabezado."""
 
     @property
     def name_row(self) -> int:
@@ -80,6 +82,10 @@ class Layout:
     @property
     def header_row(self) -> int:
         return self.first_item_row - 1
+
+    @property
+    def title_address(self) -> str | None:
+        return f"{self.item_columns['description']}{self.first_item_row - 3}" if self.title else None
 
 
 @dataclass(frozen=True)

@@ -52,6 +52,8 @@ def _write_headers(w: SheetWriter, layout: Layout, blocks: list[Block]) -> None:
         w.put(f"{column}{layout.header_row}", labels[role])
     for column, label in zip(layout.quantity_columns, layout.quantity_labels, strict=True):
         w.put(f"{column}{layout.header_row}", label)
+    if layout.title_address:
+        w.put(layout.title_address, layout.title)
     w.put(f"{layout.item_columns['description']}{layout.name_row}", "PARTICIPANTE")
     for block in blocks:
         w.put(_name_address(layout, block), block.provider.name)
@@ -107,7 +109,7 @@ def _table_map(layout: Layout, blocks: list[Block], totals: dict[str, list[Total
     providers = [ProviderBlock(name_address=_name_address(layout, block),
                                columns=ProviderColumns(**(NO_COLUMNS | block.columns)),
                                totals=totals.get(_name_address(layout, block), [])) for block in blocks]
-    return Table(table_id=layout.table_id, group=layout.group, title_address=None, site_address=None,
+    return Table(table_id=layout.table_id, group=layout.group, title_address=layout.title_address, site_address=None,
                  header_rows=[layout.name_row, layout.header_row],
                  item_rows=RowRange(first=layout.first_item_row, last=layout.first_item_row + item_count - 1),
                  item_columns=item_columns, providers=providers, confidence=1.0)

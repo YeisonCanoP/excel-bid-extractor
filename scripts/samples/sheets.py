@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from xlsxwriter.workbook import Workbook
 
-from scripts.samples.writer import SheetWriter
+from scripts.samples.writer import SheetWriter, shift
 
 
 @dataclass(frozen=True)
@@ -59,6 +59,25 @@ def write_support_sheet(workbook: Workbook, name: str, title: str, rows: list[tu
     for row, values in enumerate(rows, start=5):
         for column, value in zip("BCD", values, strict=True):
             w.put(f"{column}{row}", value)
+
+
+def write_tariff_sheet(workbook: Workbook, name: str, title: str, services: list[str],
+                       tariffs: dict[str, list[float]]) -> None:
+    """Hoja de apoyo con tarifas de servicios ocasionales por proveedor (sin corrección aritmética)."""
+    w = SheetWriter(workbook, name)
+    w.put("B2", title)
+    w.put("B4", "PARTICIPANTE")
+    for column, label in (("B", "DESCRIPCIÓN DEL SERVICIO"), ("C", "CANTIDAD")):
+        w.put(f"{column}5", label)
+    for index, (provider, prices) in enumerate(tariffs.items()):
+        column = shift("D", index)
+        w.put(f"{column}4", provider)
+        w.put(f"{column}5", "VALOR TARIFA (IVA INCLUIDO)")
+        for row, price in enumerate(prices, start=6):
+            w.put(f"{column}{row}", price, "COP")
+    for row, service in enumerate(services, start=6):
+        w.put(f"B{row}", service)
+        w.put(f"C{row}", 1)
 
 
 def _provider_table(workbook: Workbook, name: str, headers: tuple[str, ...], rows: list[tuple]) -> None:
