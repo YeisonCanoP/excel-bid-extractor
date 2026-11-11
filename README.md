@@ -1,0 +1,183 @@
+# excel-bid-extractor
+
+Extracción de cotizaciones desde informes de evaluación económica en Excel cuya estructura cambia en cada archivo.
+**Claude identifica las hojas y ubica las celdas; el código copia, corrige y valida cada valor**, con trazabilidad
+hasta su celda de origen.
+
+## El problema
+
+Cada informe es un libro de Excel con decenas de hojas (jurídica, técnica, puntajes…). La que importa, la
+**revisión aritmética** de las ofertas, cambia de nombre, de posición y de forma en cada libro:
+
+- proveedores en bloques de columnas, una o varias tablas por hoja, encabezados de 2 o 3 filas;
+- plantillas vacías con la misma estructura que la hoja real, y hojas ocultas con datos útiles;
+- textos con basura (`"\t\nPROVEEDOR SAS"`) y números con ruido de punto flotante (`12608509.200000001`).
+
+Una regla por nombre de hoja o por texto no alcanza. Un modelo de lenguaje sí entiende la estructura, pero no se le
+puede confiar la copia de los números.
+
+## El enfoque
+
+1. **Ningún número pasa por la IA.** La IA devuelve roles de hojas y direcciones de celdas; el código lee los valores.
+2. **Contratos estrictos.** Las respuestas de la IA usan *structured outputs* con esquemas pydantic y se validan antes
+   de usarlas.
+3. **El Excel se verifica a sí mismo.** Las fórmulas del evaluador (`ROUND`, `SUM`, `IF(ofertado = corregido)`) dicen
+   cómo se corrigió cada valor. El código recalcula esa corrección: si no coincide, el mapa de celdas está mal.
+4. **Trazabilidad completa.** Cada valor guarda su hoja y su celda; cada valor calculado guarda además su regla.
+5. **Revisión humana explícita.** Lo que no cuadra no se adivina: el documento queda en `HUMAN_REVIEW_REQUIRED` con
+   el motivo y las celdas involucradas.
+
+## Estado
+
+| Etapa | Qué hace | Estado |
+|---|---|---|
+| 1. Identificación de hojas | Claude clasifica cada hoja como `principal`, `apoyo` o `descartada`; se guarda el JSON limpio | ✅ En el pipeline y el CLI |
+| 2. Mapa de celdas | Claude ubica tablas, ítems, bloques por proveedor y totales de cada hoja principal | 🚧 Contrato listo; falta el mapeo con IA |
+| 3. Extracción y validación | El código extrae cotizaciones, aplica la regla del evaluador y valida R1–R11 | ✅ Módulo `app/quotes` con pruebas; falta conectarlo al pipeline |
+| 4. Modelo destino | Relación con proveedores, productos y cotizaciones finales | Pendiente |
+
+## Requisitos
+
+- Python 3.13+ y [uv](https://docs.astral.sh/uv/)
+- Docker (para MongoDB)
+- Un deployment de Claude Sonnet en Microsoft Foundry (solo para `--classifier ai`)
+
+## Puesta en marcha
+
+```powershell
+uv sync                     # dependencias
+copy .env.example .env      # completar FOUNDRY_RESOURCE y FOUNDRY_API_KEY
+docker compose up -d        # MongoDB en localhost:27017
+```
+
+Los Excel de entrada van en `scripts/fixture/` (ignorados en git: son datos reales). Ninguno viene con el repositorio.
+
+## Uso
+
+```powershell
+make up       # MongoDB
+make run      # procesa los Excel pendientes de la carpeta
+make fresh    # borra la base y procesa todo desde cero
+make status   # tabla de resultados (también con solo "make")
+```
+
+Con el CLI, para el resto de opciones:
+
+```powershell
+uv run python -m app.cli run                          # procesa INPUT_DIR
+uv run python -m app.cli run "ruta\al\archivo.xlsx"   # un solo archivo
+uv run python -m app.cli run --classifier rules       # sin IA (clasificador por reglas)
+uv run python -m app.cli run --force                  # reprocesa lo ya procesado
+uv run python -m app.cli status                       # tabla de resultados
+uv run python -m app.cli reset                        # borra la base (pide confirmación; --yes para no pedirla)
+uv run pytest                                         # pruebas (no requieren MongoDB ni IA)
+```
+
+Un archivo ya procesado no se vuelve a procesar: el `_id` del documento es el sha256 del archivo.
+
+## Cómo funciona
+
+```
+Excel ─► profile ─► classify ─► validate ─► extract ─► map ─► quotes ─► rules
+         ficha de    rol de      hojas         JSON      mapa de   cotizaciones  R1–R11
+         cada hoja   cada hoja   existen,      limpio    celdas    con su celda
+                     (IA|reglas) confianza               (IA)      de origen
+```
+
+### 1. Identificación de hojas
+
+El código arma una ficha pequeña de cada hoja (textos de encabezado, celdas numéricas, palabras clave) y Claude
+asigna un rol en una sola llamada por libro:
+
+| Rol | Significado |
+|---|---|
+| `principal` | Revisión aritmética: fuente de las cotizaciones |
+| `apoyo` | Precios o ítems que dan contexto (detalle de ítems, tarifas) |
+| `descartada` | Todo lo demás, incluidas las plantillas vacías |
+
+Si Foundry no está disponible, el clasificador por reglas devuelve el mismo JSON (`CLASSIFIER=rules`).
+
+### 2. Regla de corrección del evaluador
+
+Las celdas corregidas del Excel tienen la regla escrita en su fórmula, y el código la reproduce:
+
+| Paso | Fórmula del evaluador |
+|---|---|
+| Unitario corregido | `ROUND(unitario ofertado, d)` |
+| Total corregido | `ROUND(cantidad × unitario corregido, d)` (con AIU: `+ cantidad × unitario × AIU × IVA`) |
+| OK/ERROR | `IF(ofertado = corregido, "OK", "ERROR")` |
+
+Los decimales `d` se leen de cada fórmula `ROUND(…, d)`; sin fórmula, 0 para COP y 2 para otras monedas.
+
+### 3. Validaciones
+
+Hay dos tipos que no significan lo mismo:
+
+- **Hallazgo:** error o particularidad de la oferta. Es lo que la revisión busca; se reporta y no bloquea.
+- **Integridad:** la extracción no cuadra con el evaluador. Casi siempre significa que el mapa está mal: bloquea.
+
+| Regla | Tipo | Comprobación |
+|---|---|---|
+| R1 | Hallazgo | cantidad × unitario ofertado = total ofertado |
+| R2 | Integridad | Nuestro recálculo da los valores corregidos del evaluador |
+| R3 | Integridad | La suma de los ítems da el subtotal de la tabla |
+| R4 | Integridad | subtotal + IVA = total |
+| R5 | Integridad | Nuestro OK/ERROR coincide con el del evaluador |
+| R6 | Integridad | Campos críticos presentes (proveedor, producto, cantidad, precio, moneda) |
+| R7 | Integridad | Sin cotizaciones duplicadas (grupo + proveedor + producto + unidad) |
+| R8 | Hallazgo | Desviación frente al presupuesto |
+| R9 | Hallazgo | Ítem cotizado en 0 |
+| R10 | Integridad | La suma de las tablas da el total de la oferta |
+| R11 | Hallazgo | Un total ofertado difiere del corregido |
+
+## Estructura
+
+Arquitectura en capas: cada carpeta tiene una sola responsabilidad y solo `pipeline.py` las combina.
+
+```
+app/
+├── cli.py              comandos run / status / reset
+├── pipeline.py         orquesta las etapas y registra stage_log
+├── config.py           configuración (.env)
+├── domain/             contratos pydantic: documento, clasificación, mapa de celdas, cotización, validación
+├── excel/              openpyxl: lectura, ficha de cada hoja y JSON limpio
+├── classifiers/        clasificación de hojas: ai | rules (misma interfaz) + validación
+├── ai/                 cliente de Claude en Foundry + prompts versionados
+├── quotes/             mapa + JSON limpio → cotizaciones
+│   ├── sheet.py          lectura por dirección, cada valor con su celda
+│   ├── normalize.py      ROUND de Excel, "no cotiza", llaves de proveedor y producto, unidad
+│   ├── item.py           cantidad, precios ofertados/corregidos y componentes de un ítem
+│   ├── correction.py     regla del evaluador leída de las fórmulas
+│   ├── fact.py, taxes.py precio, total, IVA y AIU para el modelo destino
+│   ├── extractor.py      orquesta la extracción de una hoja
+│   └── rules/            R1–R11 por ítem, por tabla y por hoja
+└── storage/            MongoDB: conexión, índices y repositorios
+tests/                  pruebas unitarias con hojas creadas en memoria
+```
+
+## MongoDB
+
+| Colección | Contenido |
+|---|---|
+| `documents` | Un registro por Excel: estado, ficha de cada hoja, clasificación y etapas |
+| `source_sheets` | JSON limpio de cada hoja principal o de apoyo, con la dirección de cada celda |
+| `ai_runs` | Cada llamada a la IA: deployment, tokens, duración, `request_id` y respuesta |
+
+## Configuración (`.env`)
+
+| Variable | Uso |
+|---|---|
+| `MONGO_URI`, `MONGO_DB` | Conexión a MongoDB |
+| `INPUT_DIR` | Carpeta por defecto de los Excel |
+| `CLASSIFIER` | `ai` o `rules` |
+| `FOUNDRY_RESOURCE`, `FOUNDRY_API_KEY` | Recurso de Microsoft Foundry y su clave (nunca va a git) |
+| `MODEL_CLASSIFY`, `EFFORT_CLASSIFY` | Deployment de Claude y nivel de esfuerzo |
+| `CONFIDENCE_AUTO` | Por debajo de este valor, una hoja principal pasa a revisión humana |
+| `PROMPT_VERSION` | Versión del prompt (`app/ai/prompts/`) |
+| `TOL_FINDING` | Diferencia mínima para reportar un hallazgo (por defecto 0,01) |
+| `TOL_INTEGRITY_ABS`, `TOL_INTEGRITY_REL` | Tolerancia frente a los valores del evaluador (por defecto 1 y 0,0001) |
+
+## Stack
+
+Python 3.13 · uv · openpyxl · pydantic v2 · MongoDB 7 · SDK `anthropic` (`AnthropicFoundry`, structured outputs) ·
+typer · pytest · ruff · pyrefly

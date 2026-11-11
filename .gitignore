@@ -1,0 +1,19 @@
+# Documentación interna
+docs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Configuración y secretos
+.env
+
+# IDE
+.idea/
+
+# Excel de evaluaciones reales (datos sensibles)
+scripts/fixture/*.xls*
+scripts/fixture/resultado/
