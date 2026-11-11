@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     prompt_version: str = "classify-v3"
     """Archivo de app/ai/prompts/ con las instrucciones (classify-v3 -> classify_v3.md)."""
 
+    # Mapa de celdas
+    model_map: str = "claude-sonnet-5-5"
+    """Deployment de Foundry para el mapeo."""
+    effort_map: Literal["low", "medium", "high"] = "medium"
+    max_tokens_map: int = 32000
+    """La respuesta incluye el razonamiento; con este tope la llamada usa streaming."""
+    prompt_map_version: str = "map-v1"
+
     # Validaciones económicas
     tol_finding: float = 0.01
     """Diferencia mínima para reportar un hallazgo de la oferta (0,4 USD ya es una corrección)."""

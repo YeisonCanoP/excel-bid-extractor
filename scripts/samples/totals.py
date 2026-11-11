@@ -63,7 +63,8 @@ def _sum(w: SheetWriter, layout: Layout, block: Block, total: TotalRow) -> Total
 
 def _iva(w: SheetWriter, layout: Layout, block: Block, total: TotalRow, subtotal: TotalRef) -> TotalRef:
     offered_col, corrected_col = block.offered_column, block.corrected_column
-    offered = block.provider.iva_offered or without_noise(w.number(subtotal.offered) * IVA_RATE)
+    typed_iva = round(w.number(subtotal.offered) * IVA_RATE, 2)  # el proveedor lo escribe con 2 decimales
+    offered = block.provider.iva_offered or typed_iva
     corrected = without_noise(w.number(subtotal.corrected) * IVA_RATE)
     w.put(f"{offered_col}{total.row}", offered, layout.currency)
     w.formula(f"{corrected_col}{total.row}", f"={subtotal.corrected}*19%", corrected, layout.currency)

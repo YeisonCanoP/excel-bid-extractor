@@ -42,5 +42,7 @@ class SourceSheet(BaseModel):
     used_range: str
     cell_count: int
     merged_cells: list[str]
+    hidden_columns: list[str] = []
+    """Columnas ocultas (p. ej. bloques de proveedores que no ofertaron)."""
     rows: list[Row]
     created_at: datetime

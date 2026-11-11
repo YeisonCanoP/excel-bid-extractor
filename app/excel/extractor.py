@@ -9,6 +9,7 @@
 from datetime import UTC, date, datetime, time
 
 from openpyxl.cell.cell import Cell as ExcelCell
+from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 from app.domain.classification import SheetClassification
@@ -39,6 +40,7 @@ def extract_sheet(
         used_range=values_sheet.dimensions,
         cell_count=sum(len(row.cells) for row in rows),
         merged_cells=[str(cell_range) for cell_range in values_sheet.merged_cells.ranges],
+        hidden_columns=_hidden_columns(values_sheet),
         rows=rows,
         created_at=datetime.now(UTC),
     )
@@ -72,6 +74,13 @@ def _text_cell(excel_cell: ExcelCell, common: dict) -> Cell:
         return Cell(**common, value=text, type="error")
     cleaned = clean_text(text)
     return Cell(**common, value=cleaned, type="text", raw=text if cleaned != text else None)
+
+
+def _hidden_columns(sheet: Worksheet) -> list[str]:
+    """Letras de las columnas ocultas; openpyxl agrupa columnas consecutivas en un solo rango (min-max)."""
+    hidden = {index for dimension in sheet.column_dimensions.values() if dimension.hidden
+              for index in range(dimension.min, dimension.max + 1)}
+    return [get_column_letter(index) for index in sorted(hidden)]
 
 
 def _formula_at(formulas_sheet: Worksheet, row: int, column: int) -> str | None:
