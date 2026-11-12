@@ -18,8 +18,6 @@ def structure_problems(cell_map: CellMapResult, cells: SheetCells, used_range: s
                  if not _inside(a, used_range)]
     if not cell_map.tables:
         problems.append("El mapa no tiene ninguna tabla de ítems.")
-    if not cell_map.currency:
-        problems.append("No se identificó la moneda: búscala en los encabezados y títulos.")
     return problems
 
 

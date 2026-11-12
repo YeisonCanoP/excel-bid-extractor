@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     # Entrada
     input_dir: Path = Path("scripts/fixture")
+    output_dir: Path = Path("output/confidencial")
+    """Reportes en Excel de cada documento (datos reales: ignorada en git)."""
 
     # Clasificación de hojas
     classifier: Literal["ai", "rules"] = "ai"

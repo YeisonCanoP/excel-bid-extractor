@@ -10,13 +10,37 @@ from pydantic import BaseModel
 class DocumentStatus(StrEnum):
     RECEIVED = "RECEIVED"
     SHEETS_IDENTIFIED = "SHEETS_IDENTIFIED"
+    """Hojas clasificadas y JSON limpio guardado; sigue el mapeo."""
+    CELLS_MAPPED = "CELLS_MAPPED"
+    """Mapas de las hojas principales guardados; siguen las cotizaciones."""
+    QUOTATIONS_VALIDATED = "QUOTATIONS_VALIDATED"
+    """Cotizaciones extraídas y todas las reglas de integridad cuadran."""
     HUMAN_REVIEW_REQUIRED = "HUMAN_REVIEW_REQUIRED"
     FAILED = "FAILED"
 
     @property
     def is_final(self) -> bool:
-        """Un documento en estado final no se reprocesa, salvo con --force."""
-        return self in (DocumentStatus.SHEETS_IDENTIFIED, DocumentStatus.HUMAN_REVIEW_REQUIRED)
+        """Un documento en estado final no se reprocesa, salvo con --force o --from."""
+        return self in (DocumentStatus.QUOTATIONS_VALIDATED, DocumentStatus.HUMAN_REVIEW_REQUIRED)
+
+
+class OutcomeSummary(BaseModel):
+    """Resultados del análisis de un documento (documents.summary)."""
+
+    principal_sheets: int = 0
+    accepted_sheets: int = 0
+    quotations: int = 0
+    findings: dict[str, int] = {}
+    """Hallazgos de la oferta por regla (R1, R9, R11…)."""
+
+
+class DocumentOutcome(BaseModel):
+    """Cómo terminó el análisis de un documento (campos de documents)."""
+
+    status: DocumentStatus
+    review_code: str | None = None
+    review_reasons: list[str] = []
+    summary: OutcomeSummary = OutcomeSummary()
 
 
 class StageLog(BaseModel):

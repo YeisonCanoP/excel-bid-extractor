@@ -32,8 +32,8 @@ puede confiar la copia de los números.
 | Etapa | Qué hace | Estado |
 |---|---|---|
 | 1. Identificación de hojas | Claude clasifica cada hoja como `principal`, `apoyo` o `descartada`; se guarda el JSON limpio | ✅ En el pipeline y el CLI |
-| 2. Mapa de celdas | Claude ubica tablas, ítems, bloques por proveedor y totales de cada hoja principal | ✅ Mapeo con IA, verificación aritmética y reintento (`scripts/eval_maps.py`); falta conectarlo al pipeline |
-| 3. Extracción y validación | El código extrae cotizaciones, aplica la regla del evaluador y valida R1–R11 | ✅ Módulo `app/quotes` con pruebas; falta conectarlo al pipeline |
+| 2. Mapa de celdas | Claude ubica tablas, ítems, bloques por proveedor y totales de cada hoja principal | ✅ En el pipeline: verificación aritmética y reintento; se guarda en `cell_maps` |
+| 3. Extracción y validación | El código extrae cotizaciones, aplica la regla del evaluador y valida R1–R11 | ✅ En el pipeline: `quotations`, `offer_totals` y reporte final (MongoDB + Excel) |
 | 4. Modelo destino | Relación con proveedores, productos y cotizaciones finales | Pendiente |
 
 ## Requisitos
@@ -58,8 +58,10 @@ Tus propios Excel van en `scripts/fixture/`, que está ignorada en git.
 ```powershell
 make up       # MongoDB
 make demo     # procesa los libros de muestra (samples/)
-make run      # procesa los Excel pendientes de INPUT_DIR
+make run      # procesa los Excel pendientes de INPUT_DIR y deja su reporte en output/confidencial/
 make fresh    # borra la base y procesa todo desde cero
+make remap    # vuelve a mapear con IA solo las hojas que quedaron en revisión
+make requote  # recalcula cotizaciones y reportes con los mapas guardados (sin IA, gratis)
 make status   # tabla de resultados (también con solo "make")
 ```
 
@@ -70,13 +72,20 @@ uv run python -m app.cli run                          # procesa INPUT_DIR
 uv run python -m app.cli run "ruta\al\archivo.xlsx"   # un solo archivo
 uv run python -m app.cli run --classifier rules       # sin IA (clasificador por reglas)
 uv run python -m app.cli run --force                  # reprocesa lo ya procesado
+uv run python -m app.cli run --from map --force       # vuelve a mapear todas las hojas (no solo las pendientes)
 uv run python -m app.cli status                       # tabla de resultados
+uv run python -m app.cli show "40."                   # reporte de un documento en la consola
+uv run python -m app.cli export "40."                 # vuelve a escribir su Excel de reporte
 uv run python -m app.cli reset                        # borra la base (pide confirmación; --yes para no pedirla)
 uv run pytest                                         # pruebas (no requieren MongoDB ni IA)
 uv run python -m scripts.eval_maps --real            # mapeo con IA de muestras y Excel reales (con costo)
 ```
 
-Un archivo ya procesado no se vuelve a procesar: el `_id` del documento es el sha256 del archivo.
+Un archivo ya procesado no se vuelve a procesar: el `_id` del documento es el sha256 del archivo. Un documento
+que quedó a mitad de camino continúa desde donde quedó.
+
+Al terminar cada documento se genera su reporte en `output/confidencial/<nombre del Excel> - reporte.xlsx`
+(ignorada en git), con las hojas Resumen, Cotizaciones, Totales, Hallazgos y Revisión. Se sobrescribe al reprocesar.
 
 ## Cómo funciona
 
@@ -163,12 +172,17 @@ y los hallazgos esperados. `tests/test_samples.py` corre todo el flujo sobre ell
 
 ## Estructura
 
-Arquitectura en capas: cada carpeta tiene una sola responsabilidad y solo `pipeline.py` las combina.
+Arquitectura en capas: cada carpeta tiene una sola responsabilidad y solo `pipeline/` las combina.
 
 ```
 app/
-├── cli.py              comandos run / status / reset
-├── pipeline.py         orquesta las etapas y registra stage_log
+├── cli.py              comandos run / status / show / export / reset
+├── pipeline/           orquesta las etapas, continúa desde donde quedó cada documento
+│   ├── sheets.py         ficha, clasificación, validación y JSON limpio
+│   ├── mapping.py        mapa de cada hoja principal (solo las pendientes)
+│   ├── quotes.py         cotizaciones y reglas con los mapas aceptados
+│   ├── outcome.py        estado final, revisión humana y resumen
+│   └── reporting.py      reporte en MongoDB y en Excel
 ├── config.py           configuración (.env)
 ├── domain/             contratos pydantic: documento, clasificación, mapa de celdas, cotización, validación
 ├── excel/              openpyxl: lectura, ficha de cada hoja y JSON limpio
@@ -185,6 +199,7 @@ app/
 │   ├── sites.py          sede de cada fila ("PATIO DE 230KV") para la unidad
 │   ├── extractor.py      orquesta la extracción de una hoja
 │   └── rules/            R1–R11 por ítem, por tabla y por hoja
+├── report/             reporte final: armado (builder), Excel y consola
 └── storage/            MongoDB: conexión, índices y repositorios
 scripts/samples/        generador de los libros de muestra y su resultado esperado
 samples/                libros de muestra (.xlsx) y expected/ (resultado esperado en JSON)
@@ -195,9 +210,13 @@ tests/                  pruebas unitarias y de punta a punta sobre los libros de
 
 | Colección | Contenido |
 |---|---|
-| `documents` | Un registro por Excel: estado, ficha de cada hoja, clasificación y etapas |
+| `documents` | Un registro por Excel: estado, ficha de cada hoja, clasificación, etapas y resumen de resultados |
 | `source_sheets` | JSON limpio de cada hoja principal o de apoyo, con la dirección de cada celda |
-| `ai_runs` | Cada llamada a la IA: deployment, tokens, duración, `request_id` y respuesta |
+| `ai_runs` | Cada llamada a la IA (clasificación y mapeo): deployment, intento, tokens, duración y respuesta |
+| `cell_maps` | El mapa de cada hoja principal: aceptado o en revisión, con los problemas de cada intento |
+| `quotations` | Una cotización por proveedor x ítem, con la celda de origen de cada valor y sus validaciones |
+| `offer_totals` | Subtotal, IVA, AIU y total de cada proveedor, por tabla y por hoja |
+| `reports` | **El reporte final de cada documento**: resumen, ofertas por grupo y proveedor, hallazgos y revisión |
 
 ## Configuración (`.env`)
 
@@ -205,6 +224,7 @@ tests/                  pruebas unitarias y de punta a punta sobre los libros de
 |---|---|
 | `MONGO_URI`, `MONGO_DB` | Conexión a MongoDB |
 | `INPUT_DIR` | Carpeta por defecto de los Excel |
+| `OUTPUT_DIR` | Carpeta de los reportes en Excel (por defecto `output/confidencial`) |
 | `CLASSIFIER` | `ai` o `rules` |
 | `FOUNDRY_RESOURCE`, `FOUNDRY_API_KEY` | Recurso de Microsoft Foundry y su clave (nunca va a git) |
 | `MODEL_CLASSIFY`, `EFFORT_CLASSIFY` | Deployment de Claude y nivel de esfuerzo |

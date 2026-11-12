@@ -1,14 +1,11 @@
 """Mapeador: verificación del mapa y reintentos, con un cliente falso (sin llamar a la IA)."""
 
 import json
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import pytest
 from pydantic import BaseModel
 
-from app.ai.client import ClaudeAnswer, ClaudeClient
-from app.domain.ai_run import TokenUsage
 from app.domain.cell_map import CellMapResult
 from app.domain.classification import SheetClassification, SheetRole
 from app.domain.source_sheet import SourceSheet
@@ -16,24 +13,11 @@ from app.domain.validation import ReviewCode
 from app.excel.extractor import extract_sheet
 from app.excel.reader import load_formulas, load_values
 from app.mapping.mapper import AiMapper
+from tests.fakes import FakeClaude
 
 SAMPLE = Path(__file__).parent.parent / "samples" / "01_suministro_equipos_usd.xlsx"
 EXPECTED = SAMPLE.parent / "expected" / "01_suministro_equipos_usd.json"
 SHEET = "Revisión aritmética"
-
-
-@dataclass(frozen=True)
-class FakeClaude(ClaudeClient):
-    """Devuelve los mapas en orden y guarda los mensajes que recibió."""
-
-    outputs: list[BaseModel | None] = field(default_factory=list)
-    messages: list[str] = field(default_factory=list)
-
-    def ask(self, *, system: str, user: str, schema: type[BaseModel]) -> ClaudeAnswer:
-        self.messages.append(user)
-        output = self.outputs.pop(0)
-        return ClaudeAnswer(output=output, stop_reason="end_turn" if output else "refusal",
-                            usage=TokenUsage(input_tokens=1, output_tokens=1), duration_ms=1, request_id=None)
 
 
 @pytest.fixture(scope="module")

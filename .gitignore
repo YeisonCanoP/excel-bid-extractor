@@ -17,3 +17,6 @@ __pycache__/
 # Excel de evaluaciones reales (datos sensibles)
 scripts/fixture/*.xls*
 scripts/fixture/resultado/
+
+# Reportes generados con datos reales
+output/confidencial/
