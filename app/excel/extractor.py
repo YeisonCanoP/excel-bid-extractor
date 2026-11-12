@@ -57,7 +57,7 @@ def _rows(values_sheet: Worksheet, formulas_sheet: Worksheet) -> list[Row]:
 
 def _to_cell(excel_cell: ExcelCell, formula: str | None) -> Cell:
     value = excel_cell.value
-    common = {"address": excel_cell.coordinate, "col": excel_cell.column, "formula": formula}
+    common = {"address": excel_cell.coordinate,"formula": formula}
     if isinstance(value, bool):
         return Cell(**common, value=value, type="bool")
     if isinstance(value, (int, float)):

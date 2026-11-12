@@ -14,7 +14,6 @@ CellValue = str | int | float | bool | None
 class Cell(BaseModel):
     address: str
     """Dirección en Excel, p. ej. 'J10'."""
-    col: int
     value: CellValue
     """Valor calculado. Los números se guardan tal cual vienen; las fechas en ISO 8601."""
     type: CellType

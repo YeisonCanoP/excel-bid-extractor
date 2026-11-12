@@ -13,12 +13,12 @@ LONG_TEXT = "Cable de fibra óptica para exteriores con cubierta resistente a ra
 
 def _sheet() -> SourceSheet:
     cells = {
-        7: [Cell(address="B7", col=2, value="PARTICIPANTE", type="text"),
-            Cell(address="H7", col=8, value="ACME ANDINA SAS", type="text")],
-        10: [Cell(address="C10", col=3, value=LONG_TEXT, type="text"),
-             Cell(address="G10", col=7, value=8000, type="number", number_format="#,##0"),
-             Cell(address="I10", col=9, value=12608509.200000001, type="number", number_format="[$USD] #,##0.00"),
-             Cell(address="J10", col=10, value=5.5, type="number", number_format="[$USD] #,##0.00")],
+        7: [Cell(address="B7", value="PARTICIPANTE", type="text"),
+            Cell(address="H7", value="ACME ANDINA SAS", type="text")],
+        10: [Cell(address="C10", value=LONG_TEXT, type="text"),
+             Cell(address="G10", value=8000, type="number", number_format="#,##0"),
+             Cell(address="I10", value=12608509.200000001, type="number", number_format="[$USD] #,##0.00"),
+             Cell(address="J10", value=5.5, type="number", number_format="[$USD] #,##0.00")],
     }
     return SourceSheet(document_id="doc", sheet_name="Revisión aritmética", sheet_index=0, role=SheetRole.PRINCIPAL,
                        state="visible", used_range="B7:J10", cell_count=6, merged_cells=["H7:M7"],

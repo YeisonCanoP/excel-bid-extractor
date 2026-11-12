@@ -24,10 +24,9 @@ def _sheet(cells: dict[str, object]) -> SourceSheet:
     rows: dict[int, list[Cell]] = {}
     for address, spec in cells.items():
         value, formula = spec if isinstance(spec, tuple) else (spec, None)
-        col = ord(address[0]) - 64
         kind = "number" if isinstance(value, int | float) else "text"
         rows.setdefault(int(address[1:]), []).append(
-            Cell(address=address, col=col, value=value, type=kind, formula=formula))
+            Cell(address=address, value=value, type=kind, formula=formula))
     return SourceSheet(document_id="doc", sheet_name="RevAritmética", sheet_index=0, role=SheetRole.PRINCIPAL,
                        group="1", state="visible", used_range="A1:Z30", cell_count=len(cells), merged_cells=[],
                        rows=[Row(row=r, cells=c) for r, c in sorted(rows.items())], created_at=datetime.now(UTC))
@@ -201,8 +200,8 @@ def test_excel_round_rounds_half_away_from_zero():
 
 
 def test_round_digits_come_from_the_formula():
-    usd = Cell(address="K10", col=11, value=1.0, type="number", formula="=+ROUND(I10,2)")
-    nested = Cell(address="K9", col=11, value=1.0, type="number", formula="=+ROUND((J9*$D9)+(J9*$D9*10%*19%),0)")
+    usd = Cell(address="K10", value=1.0, type="number", formula="=+ROUND(I10,2)")
+    nested = Cell(address="K9", value=1.0, type="number", formula="=+ROUND((J9*$D9)+(J9*$D9*10%*19%),0)")
     assert (round_digits(usd, "USD"), round_digits(nested, "COP"), round_digits(None, "USD")) == (2, 0, 2)
 
 
