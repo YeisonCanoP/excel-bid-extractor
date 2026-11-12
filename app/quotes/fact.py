@@ -38,7 +38,7 @@ def _precio(item: ItemValues, digits: Digits) -> Derived | None:
 
 def _total_oferta(item: ItemValues, block: ProviderBlock, precio: Derived | None, digits: Digits) -> Derived | None:
     """El total corregido ya es antes de IVA, salvo cuando la hoja suma el IVA por ítem."""
-    if block.columns.iva is None and item.corrected.total_price is not None:
+    if not block.columns.iva and item.corrected.total_price is not None:
         return Derived.copy_of(item.corrected.total_price, "total_corregido")
     if precio is None or item.quantity is None:
         return None

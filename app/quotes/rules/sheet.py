@@ -64,12 +64,15 @@ def budget_rule(offer: ProviderOffer, budget: SourcedNumber | None) -> None:
 
 
 def duplicates_rule(quotations: list[Quotation]) -> None:
-    """R7 (integridad): una cotización por grupo + proveedor + producto + unidad."""
+    """R7 (integridad): una cotización por grupo + proveedor + ítem + producto + unidad.
+
+    El número de ítem cuenta: la misma descripción puede repetirse en capítulos distintos (3.1 y 4.1).
+    """
     first_row: dict[tuple, int] = {}
     for q in quotations:
         if q.status == QuoteStatus.NO_OFFER:
             continue
-        key = (q.group, q.provider.key, q.product.key, q.unit.value)
+        key = (q.group, q.provider.key, q.product.item_no, q.product.key, q.unit.value)
         if key in first_row:
             q.validations.append(RuleResult(rule="R7", kind=INTEGRITY, passed=False,
                                             message=f"Cotización duplicada con la fila {first_row[key]}",

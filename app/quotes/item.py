@@ -1,10 +1,11 @@
-"""Valores de un ítem en el bloque de un proveedor: cantidad, precios ofertados y corregidos, componentes."""
+"""Un ítem en el bloque de un proveedor: sus valores, si la fila es un ítem y su estado (cotizado, en 0, sin oferta)."""
 
 import math
 from dataclasses import dataclass
 
 from app.domain.cell_map import ProviderColumns
-from app.domain.quotation import Components, Prices, SourcedNumber
+from app.domain.quotation import Components, Prices, QuoteStatus, SourcedNumber
+from app.quotes.normalize import is_no_offer
 from app.quotes.sheet import SheetCells
 
 
@@ -45,3 +46,30 @@ def read_quantity(cells: SheetCells, columns: list[str], row: int) -> SourcedNum
     if len(factors) < len(columns):
         return None
     return SourcedNumber(value=math.prod(f.value for f in factors), source=[s for f in factors for s in f.source])
+
+
+def is_item(item: ItemValues) -> bool:
+    """Ítem = fila con cantidad, distinta de 0 o con un valor unitario distinto de 0.
+
+    Las demás son separadores o encabezados de capítulo ("1.3 CIMENTACIONES", sin cantidad o con 0): su valor
+    es la suma de sus ítems, así que tomarlas como cotización contaría el capítulo dos veces.
+    """
+    if item.quantity is None:
+        return False
+    return item.quantity.value != 0 or _has_value(item.offered.unit_price)
+
+
+def quote_status(cells: SheetCells, columns: ProviderColumns, item: ItemValues) -> QuoteStatus:
+    """NO_OFFER ('NO COTIZA', o unitario vacío con total 0), ZERO_PRICE o QUOTED."""
+    if any(is_no_offer(cells.at(column, item.row)) for column in (columns.unit_price, columns.total_price)):
+        return QuoteStatus.NO_OFFER
+    if columns.unit_price and item.offered.unit_price is None and not _has_value(item.offered.total_price):
+        return QuoteStatus.NO_OFFER
+    price = item.offered.unit_price or item.offered.total_price
+    if price is None:
+        return QuoteStatus.NO_OFFER
+    return QuoteStatus.ZERO_PRICE if price.value == 0 else QuoteStatus.QUOTED
+
+
+def _has_value(number: SourcedNumber | None) -> bool:
+    return number is not None and number.value != 0

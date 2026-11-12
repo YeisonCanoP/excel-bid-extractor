@@ -4,14 +4,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from app.domain.cell_map import (
-    Budget,
-    CellMapResult,
-    Currency,
-    IvaIncluded,
-    SheetTotal,
-    Table,
-)
+from app.domain.cell_map import CellMapResult, ProviderBlock, Table
 
 
 @dataclass
@@ -39,11 +32,12 @@ class SampleBook:
         return path
 
 
-def cell_map(currency: str, tables: list[Table], *, budget: Budget | None = None,
-             sheet_totals: list[SheetTotal] | None = None, iva_included: bool | None = None) -> CellMapResult:
+def cell_map(currency: str, tables: list[Table], *, budget: tuple[str, str] = ("", ""),
+             sheet_totals: list[ProviderBlock] | None = None) -> CellMapResult:
     """Mapa esperado de una hoja principal, con el mismo esquema que devuelve la IA."""
-    return CellMapResult(
-        status="complete", currency=Currency.model_validate({"code": currency, "evidence": []}),
-        iva_included=IvaIncluded(value=iva_included, evidence=[]), budget=budget, tables=tables,
-        sheet_totals=sheet_totals or [], missing_fields=[], confidence=1.0, warnings=[], requires_human_review=False,
-    )
+    return CellMapResult.model_validate({
+        "status": "complete", "currency": currency, "currency_evidence": [], "iva_included": "",
+        "budget_address": budget[0], "budget_label_address": budget[1], "tables": tables,
+        "sheet_totals": sheet_totals or [], "missing_fields": [], "confidence": 1.0, "warnings": [],
+        "requires_human_review": False,
+    })

@@ -3,7 +3,7 @@
 from app.domain.quotation import SourcedNumber, SourcedText
 from app.domain.source_sheet import Cell, SourceSheet
 from app.excel.reader import clean_text
-from app.quotes.normalize import to_number, without_noise
+from app.quotes.normalize import number_label, to_number, without_noise
 
 
 class SheetCells:
@@ -38,3 +38,11 @@ class SheetCells:
 
     def text_at(self, column: str | None, row: int) -> SourcedText | None:
         return self.text(f"{column}{row}") if column else None
+
+    def label_at(self, column: str | None, row: int) -> SourcedText | None:
+        """Texto de la celda; si es un número (p. ej. el número de ítem), sin ruido de punto flotante."""
+        number = self.number_at(column, row)
+        cell = self.at(column, row)
+        if number is not None and cell is not None and cell.type == "number":
+            return SourcedText(value=number_label(number.value), source=number.source)
+        return self.text_at(column, row)

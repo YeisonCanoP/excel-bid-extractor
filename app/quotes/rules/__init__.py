@@ -30,7 +30,7 @@ def apply_rules(result: SheetQuotes, cell_map: CellMapResult, cells: SheetCells,
 
 
 def _sheet_rules(result: SheetQuotes, cell_map: CellMapResult, cells: SheetCells, tol: Tolerances) -> None:
-    budget = cells.number(cell_map.budget.address) if cell_map.budget else None
+    budget = cells.number(cell_map.budget_address)
     for offer in offers_by_provider(result.totals):
         tables_sum_rule(offer, tol)
         budget_rule(offer, budget)

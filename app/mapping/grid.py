@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from openpyxl.utils import column_index_from_string, get_column_letter
 
 from app.domain.source_sheet import Cell, Row, SourceSheet
-from app.quotes.normalize import without_noise
+from app.quotes.normalize import number_label
 
 MAX_TEXT = 60
 NONE = "(ninguna)"
@@ -32,8 +32,7 @@ def _row_line(row: Row) -> str:
 
 def _value(cell: Cell) -> str:
     if cell.type == "number" and isinstance(cell.value, int | float):
-        number = without_noise(float(cell.value))
-        return str(int(number)) if number.is_integer() else repr(number)
+        return number_label(float(cell.value))
     text = str(cell.value)
     return text if len(text) <= MAX_TEXT else text[: MAX_TEXT - 1] + "…"
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from xlsxwriter.workbook import Workbook
 
-from app.domain.cell_map import Budget, SheetTotal
+from app.domain.cell_map import ProviderBlock
 from scripts.samples.expected import SampleBook, cell_map
 from scripts.samples.model import NO_OFFER, Item, Layout, Offer, Provider
 from scripts.samples.sheets import (
@@ -201,7 +201,7 @@ def build_licenses(folder: Path) -> SampleBook:
     return book
 
 
-def _write_offer_totals(w: SheetWriter, first: TableResult, second: TableResult) -> list[SheetTotal]:
+def _write_offer_totals(w: SheetWriter, first: TableResult, second: TableResult) -> list[ProviderBlock]:
     """Fila 'VALOR TOTAL DE LA OFERTA': suma las dos tablas de cada proveedor (mismo orden en ambas)."""
     row = second.last_row + 1
     w.put(f"B{row}", "VALOR TOTAL DE LA OFERTA")
@@ -209,10 +209,10 @@ def _write_offer_totals(w: SheetWriter, first: TableResult, second: TableResult)
     return [sheet_total(w, name, refs + more, row, "COP") for (name, refs), more in pairs]
 
 
-def _write_budget(w: SheetWriter, process: Process, row: int) -> Budget:
+def _write_budget(w: SheetWriter, process: Process, row: int) -> tuple[str, str]:
     w.put(f"C{row}", "PRESUPUESTO OFICIAL (INCLUIDO IVA)")
     w.put(f"C{row + 1}", process.budget, process.currency)
-    return Budget(address=f"C{row + 1}", label_address=f"C{row}")
+    return f"C{row + 1}", f"C{row}"
 
 
 BUILDERS = [build_goods, build_services, build_consulting, build_licenses]

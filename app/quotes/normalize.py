@@ -38,6 +38,12 @@ def to_number(cell: Cell | None) -> float | None:
         return None
 
 
+def number_label(value: float) -> str:
+    """Número como texto, sin ruido: 1.7000000000000002 -> '1.7', 4.0 -> '4'."""
+    number = without_noise(value)
+    return str(int(number)) if number.is_integer() else repr(number)
+
+
 def is_no_offer(cell: Cell | None) -> bool:
     """'NO COTIZA', 'NO OFERTADO'… en una celda de precio."""
     return cell is not None and cell.type == "text" and normalize(str(cell.value)).strip() in NO_OFFER_TEXTS

@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from app.domain.cell_map import SheetTotal, TotalKind, TotalRef
+from app.domain.cell_map import ProviderBlock, ProviderColumns, TotalKind, TotalRef
 from app.quotes.normalize import excel_round, without_noise
 from scripts.samples.model import IVA_RATE, TOTAL_LABELS, Block, Layout
 from scripts.samples.writer import SheetWriter
@@ -39,15 +39,17 @@ def write_total(w: SheetWriter, layout: Layout, block: Block, total: TotalRow, p
     return _sum(w, layout, block, total)
 
 
-def sheet_total(w: SheetWriter, name_address: str, parts: list[TotalRef], row: int, currency: str) -> SheetTotal:
-    """Total de la hoja para un proveedor: suma de los totales de cada tabla."""
+def sheet_total(w: SheetWriter, name_address: str, parts: list[TotalRef], row: int, currency: str) -> ProviderBlock:
+    """Total de la hoja para un proveedor (suma de los totales de cada tabla), como un bloque solo con totals."""
     offered_col, corrected_col = _column_of(parts[0].offered), _column_of(parts[0].corrected)
     offered = without_noise(sum(w.number(ref.offered) for ref in parts))
     corrected = without_noise(sum(w.number(ref.corrected) for ref in parts))
     w.put(f"{offered_col}{row}", offered, currency)
     w.formula(f"{corrected_col}{row}", "=" + "+".join(ref.corrected or "" for ref in parts), corrected, currency)
-    return SheetTotal(kind=TotalKind.TOTAL, label_address=None, offered=f"{offered_col}{row}",
-                      corrected=f"{corrected_col}{row}", check=None, rate=None, name_address=name_address)
+    total = TotalRef(kind=TotalKind.TOTAL, label_address=None, offered=f"{offered_col}{row}",
+                     corrected=f"{corrected_col}{row}", check=None, rate=None)
+    columns = ProviderColumns.model_validate(dict.fromkeys(ProviderColumns.model_fields))
+    return ProviderBlock(name_address=name_address, columns=columns, totals=[total])
 
 
 def _sum(w: SheetWriter, layout: Layout, block: Block, total: TotalRow) -> TotalRef:

@@ -14,7 +14,7 @@ def item_rules(q: Quotation, cell_map: CellMapResult, cells: SheetCells, tol: To
         return []
     results = [
         offered_total_rule(q, tol),
-        evaluator_correction_rule(q, cells, cell_map.currency.code, tol),
+        evaluator_correction_rule(q, cells, cell_map.currency or None, tol),
         check_agreement(q.offered.total_price, q.corrected.total_price, q.excel_check),
         critical_fields_rule(q, cell_map),
         zero_price_rule(q),
@@ -55,7 +55,7 @@ def critical_fields_rule(q: Quotation, cell_map: CellMapResult) -> RuleResult:
     present = {
         "proveedor": bool(q.provider.name), "producto": bool(q.product.description),
         "cantidad": q.quantity is not None, "precio": q.fact is not None and q.fact.precio is not None,
-        "moneda": cell_map.currency.code is not None,
+        "moneda": bool(cell_map.currency),
     }
     missing = [name for name, ok in present.items() if not ok]
     return RuleResult(rule="R6", kind=INTEGRITY, passed=not missing, cells=[f"fila {q.product.row}"],
@@ -79,7 +79,9 @@ def _recalculate(q: Quotation, cells: SheetCells, currency: str | None) -> Corre
 
 
 def _matches(ours: Correction, theirs: Prices, tol: Tolerances) -> bool:
-    pairs = [(ours.total_price, theirs.total_price), (ours.unit_price, theirs.unit_price)]
+    pairs = [(ours.total_price, theirs.total_price)]
+    if ours.unit_price is not None:  # sin unitario ofertado no hay unitario que recalcular
+        pairs.append((ours.unit_price, theirs.unit_price))
     return all(_close(mine, other, tol) for mine, other in pairs if other is not None)
 
 

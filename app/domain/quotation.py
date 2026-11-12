@@ -82,6 +82,7 @@ class FactValues(BaseModel):
     precio: Derived | None
     total_oferta: Derived | None
     iva: Derived
+    administracion: Derived | None = None
     utilidad: Derived | None = None
     iva_sobre_utilidad: Derived | None = None
 

@@ -8,6 +8,9 @@ from pydantic import BaseModel
 class TokenUsage(BaseModel):
     input_tokens: int
     output_tokens: int
+    cache_read_input_tokens: int = 0
+    """Tokens del prompt leídos de la caché (cuestan ~10 %)."""
+    cache_creation_input_tokens: int = 0
 
 
 class AiRun(BaseModel):
@@ -17,6 +20,8 @@ class AiRun(BaseModel):
     effort: str
     prompt_version: str
     schema_version: str
+    attempt: int = 1
+    """Número de intento (el mapeo reintenta con retroalimentación)."""
     stop_reason: str | None
     usage: TokenUsage
     duration_ms: int

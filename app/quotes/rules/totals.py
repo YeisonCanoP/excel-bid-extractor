@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from app.domain.cell_map import TotalKind
+from app.domain.cell_map import COMPONENT_KINDS, TotalKind
 from app.domain.quotation import OfferTotal, Quotation, SourcedNumber
 from app.domain.validation import RuleResult
 from app.quotes.rules.common import FINDING, INTEGRITY, Tolerances, cells_of, check_agreement
@@ -36,8 +36,10 @@ def table_rules(quotations: list[Quotation], totals: list[OfferTotal], tol: Tole
 
 
 def items_sum_rule(items: list[SourcedNumber], by_kind: dict[TotalKind, OfferTotal], tol: Tolerances) -> None:
-    """R3 (integridad): la suma de los totales corregidos de los ítems da el subtotal (o el total sin IVA)."""
-    target = by_kind.get(TotalKind.SUBTOTAL) or (None if TotalKind.IVA in by_kind else by_kind.get(TotalKind.TOTAL))
+    """R3 (integridad): la suma de los totales corregidos de los ítems da el subtotal (o el total, si no hay
+    impuestos ni AIU entre ambos)."""
+    has_components = any(kind in by_kind for kind in COMPONENT_KINDS)
+    target = by_kind.get(TotalKind.SUBTOTAL) or (None if has_components else by_kind.get(TotalKind.TOTAL))
     if target is None or target.corrected is None or not items:
         return
     expected = sum(item.value for item in items)
@@ -49,16 +51,17 @@ def items_sum_rule(items: list[SourcedNumber], by_kind: dict[TotalKind, OfferTot
 
 
 def subtotal_plus_iva_rule(by_kind: dict[TotalKind, OfferTotal], tol: Tolerances) -> None:
-    """R4 (integridad): subtotal + IVA = total, con los valores corregidos."""
-    subtotal, iva, total = (by_kind.get(kind) for kind in (TotalKind.SUBTOTAL, TotalKind.IVA, TotalKind.TOTAL))
-    if not (subtotal and iva and total and subtotal.corrected and iva.corrected and total.corrected):
+    """R4 (integridad): subtotal + impuestos y AIU (IVA, administración, utilidad…) = total, ya corregidos."""
+    subtotal, total = by_kind.get(TotalKind.SUBTOTAL), by_kind.get(TotalKind.TOTAL)
+    parts = [by_kind[kind].corrected for kind in COMPONENT_KINDS if kind in by_kind]
+    if not (subtotal and total and subtotal.corrected and total.corrected and parts) or None in parts:
         return
-    expected = subtotal.corrected.value + iva.corrected.value
+    expected = subtotal.corrected.value + sum(part.value for part in parts if part)
     passed = tol.close(expected, total.corrected.value)
     total.validations.append(RuleResult(
         rule="R4", kind=INTEGRITY, passed=passed, expected=expected, actual=total.corrected.value,
-        message="subtotal + IVA = total" if passed else "subtotal + IVA no da el total",
-        cells=cells_of(subtotal.corrected, iva.corrected, total.corrected)))
+        message="subtotal + impuestos = total" if passed else "subtotal + impuestos y AIU no da el total",
+        cells=cells_of(subtotal.corrected, *parts, total.corrected)))
 
 
 def _corrected_items_by_block(quotations: list[Quotation]) -> dict[BlockKey, list[SourcedNumber]]:

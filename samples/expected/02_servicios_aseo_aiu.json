@@ -22,21 +22,17 @@
   "maps": {
     "REV ARIT GRUPO 1": {
       "status": "complete",
-      "currency": {
-        "code": "COP",
-        "evidence": []
-      },
-      "iva_included": {
-        "value": null,
-        "evidence": []
-      },
-      "budget": null,
+      "currency": "COP",
+      "currency_evidence": [],
+      "iva_included": "",
+      "budget_address": "",
+      "budget_label_address": "",
       "tables": [
         {
           "table_id": "t1",
-          "group": null,
-          "title_address": null,
-          "site_address": null,
+          "group": "",
+          "title_address": "",
+          "site_address": "",
           "header_rows": [
             7,
             8
@@ -49,8 +45,8 @@
             "item_no": "A",
             "description": "C",
             "detail": [],
-            "unit": null,
-            "tariff_type": null,
+            "unit": "",
+            "tariff_type": "",
             "quantity": [
               "D"
             ]
@@ -59,7 +55,7 @@
             {
               "name_address": "E7",
               "columns": {
-                "brand": null,
+                "brand": "",
                 "unit_price": "E",
                 "total_price": "I",
                 "unit_price_corrected": "J",
@@ -67,24 +63,24 @@
                 "subtotal": "F",
                 "aiu": "G",
                 "iva": "H",
-                "factor": null,
+                "factor": "",
                 "check": "L"
               },
               "totals": [
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "I13",
                   "corrected": "K13",
                   "check": "L13",
-                  "rate": null
+                  "rate": ""
                 }
               ]
             },
             {
               "name_address": "M7",
               "columns": {
-                "brand": null,
+                "brand": "",
                 "unit_price": "M",
                 "total_price": "Q",
                 "unit_price_corrected": "R",
@@ -92,24 +88,24 @@
                 "subtotal": "N",
                 "aiu": "O",
                 "iva": "P",
-                "factor": null,
+                "factor": "",
                 "check": "T"
               },
               "totals": [
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "Q13",
                   "corrected": "S13",
                   "check": "T13",
-                  "rate": null
+                  "rate": ""
                 }
               ]
             },
             {
               "name_address": "U7",
               "columns": {
-                "brand": null,
+                "brand": "",
                 "unit_price": "U",
                 "total_price": "Y",
                 "unit_price_corrected": "Z",
@@ -117,24 +113,24 @@
                 "subtotal": "V",
                 "aiu": "W",
                 "iva": "X",
-                "factor": null,
+                "factor": "",
                 "check": "AB"
               },
               "totals": [
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "Y13",
                   "corrected": "AA13",
                   "check": "AB13",
-                  "rate": null
+                  "rate": ""
                 }
               ]
             },
             {
               "name_address": "AC7",
               "columns": {
-                "brand": null,
+                "brand": "",
                 "unit_price": "AC",
                 "total_price": "AG",
                 "unit_price_corrected": "AH",
@@ -142,17 +138,17 @@
                 "subtotal": "AD",
                 "aiu": "AE",
                 "iva": "AF",
-                "factor": null,
+                "factor": "",
                 "check": "AJ"
               },
               "totals": [
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "AG13",
                   "corrected": "AI13",
                   "check": "AJ13",
-                  "rate": null
+                  "rate": ""
                 }
               ]
             }
@@ -168,21 +164,17 @@
     },
     "REV ARIT GRUPO 2": {
       "status": "complete",
-      "currency": {
-        "code": "COP",
-        "evidence": []
-      },
-      "iva_included": {
-        "value": null,
-        "evidence": []
-      },
-      "budget": null,
+      "currency": "COP",
+      "currency_evidence": [],
+      "iva_included": "",
+      "budget_address": "",
+      "budget_label_address": "",
       "tables": [
         {
           "table_id": "t1",
-          "group": null,
-          "title_address": null,
-          "site_address": null,
+          "group": "",
+          "title_address": "",
+          "site_address": "",
           "header_rows": [
             7,
             8
@@ -195,8 +187,8 @@
             "item_no": "A",
             "description": "C",
             "detail": [],
-            "unit": null,
-            "tariff_type": null,
+            "unit": "",
+            "tariff_type": "",
             "quantity": [
               "D"
             ]
@@ -205,7 +197,7 @@
             {
               "name_address": "E7",
               "columns": {
-                "brand": null,
+                "brand": "",
                 "unit_price": "E",
                 "total_price": "I",
                 "unit_price_corrected": "J",
@@ -213,40 +205,40 @@
                 "subtotal": "F",
                 "aiu": "G",
                 "iva": "H",
-                "factor": null,
+                "factor": "",
                 "check": "L"
               },
               "totals": [
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "I14",
                   "corrected": "K14",
                   "check": "L14",
-                  "rate": null
+                  "rate": ""
                 },
                 {
                   "kind": "partial",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "I16",
                   "corrected": "K16",
                   "check": "L16",
-                  "rate": null
+                  "rate": ""
                 },
                 {
                   "kind": "partial",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "I17",
                   "corrected": "K17",
                   "check": "L17",
-                  "rate": null
+                  "rate": ""
                 }
               ]
             },
             {
               "name_address": "M7",
               "columns": {
-                "brand": null,
+                "brand": "",
                 "unit_price": "M",
                 "total_price": "Q",
                 "unit_price_corrected": "R",
@@ -254,40 +246,40 @@
                 "subtotal": "N",
                 "aiu": "O",
                 "iva": "P",
-                "factor": null,
+                "factor": "",
                 "check": "T"
               },
               "totals": [
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "Q14",
                   "corrected": "S14",
                   "check": "T14",
-                  "rate": null
+                  "rate": ""
                 },
                 {
                   "kind": "partial",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "Q16",
                   "corrected": "S16",
                   "check": "T16",
-                  "rate": null
+                  "rate": ""
                 },
                 {
                   "kind": "partial",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "Q17",
                   "corrected": "S17",
                   "check": "T17",
-                  "rate": null
+                  "rate": ""
                 }
               ]
             },
             {
               "name_address": "U7",
               "columns": {
-                "brand": null,
+                "brand": "",
                 "unit_price": "U",
                 "total_price": "Y",
                 "unit_price_corrected": "Z",
@@ -295,40 +287,40 @@
                 "subtotal": "V",
                 "aiu": "W",
                 "iva": "X",
-                "factor": null,
+                "factor": "",
                 "check": "AB"
               },
               "totals": [
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "Y14",
                   "corrected": "AA14",
                   "check": "AB14",
-                  "rate": null
+                  "rate": ""
                 },
                 {
                   "kind": "partial",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "Y16",
                   "corrected": "AA16",
                   "check": "AB16",
-                  "rate": null
+                  "rate": ""
                 },
                 {
                   "kind": "partial",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "Y17",
                   "corrected": "AA17",
                   "check": "AB17",
-                  "rate": null
+                  "rate": ""
                 }
               ]
             },
             {
               "name_address": "AC7",
               "columns": {
-                "brand": null,
+                "brand": "",
                 "unit_price": "AC",
                 "total_price": "AG",
                 "unit_price_corrected": "AH",
@@ -336,7 +328,7 @@
                 "subtotal": "AD",
                 "aiu": "AE",
                 "iva": "AF",
-                "factor": null,
+                "factor": "",
                 "check": "AJ"
               },
               "totals": []

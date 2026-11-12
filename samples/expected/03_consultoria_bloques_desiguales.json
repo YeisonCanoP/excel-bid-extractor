@@ -15,24 +15,17 @@
   "maps": {
     "Evaluación oferta económica": {
       "status": "complete",
-      "currency": {
-        "code": "COP",
-        "evidence": []
-      },
-      "iva_included": {
-        "value": null,
-        "evidence": []
-      },
-      "budget": {
-        "address": "C19",
-        "label_address": "C18"
-      },
+      "currency": "COP",
+      "currency_evidence": [],
+      "iva_included": "",
+      "budget_address": "C19",
+      "budget_label_address": "C18",
       "tables": [
         {
           "table_id": "t1",
-          "group": null,
-          "title_address": null,
-          "site_address": null,
+          "group": "",
+          "title_address": "",
+          "site_address": "",
           "header_rows": [
             7,
             8
@@ -42,11 +35,11 @@
             "last": 12
           },
           "item_columns": {
-            "item_no": null,
+            "item_no": "",
             "description": "C",
             "detail": [],
             "unit": "D",
-            "tariff_type": null,
+            "tariff_type": "",
             "quantity": [
               "E"
             ]
@@ -55,123 +48,123 @@
             {
               "name_address": "F7",
               "columns": {
-                "brand": null,
+                "brand": "",
                 "unit_price": "F",
-                "total_price": null,
-                "unit_price_corrected": null,
+                "total_price": "",
+                "unit_price_corrected": "",
                 "total_price_corrected": "G",
-                "subtotal": null,
-                "aiu": null,
-                "iva": null,
-                "factor": null,
-                "check": null
+                "subtotal": "",
+                "aiu": "",
+                "iva": "",
+                "factor": "",
+                "check": ""
               },
               "totals": [
                 {
                   "kind": "subtotal",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "F14",
                   "corrected": "G14",
-                  "check": null,
-                  "rate": null
+                  "check": "",
+                  "rate": ""
                 },
                 {
                   "kind": "iva",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "F15",
                   "corrected": "G15",
-                  "check": null,
-                  "rate": null
+                  "check": "",
+                  "rate": ""
                 },
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "F16",
                   "corrected": "G16",
-                  "check": null,
-                  "rate": null
+                  "check": "",
+                  "rate": ""
                 }
               ]
             },
             {
               "name_address": "H7",
               "columns": {
-                "brand": null,
-                "unit_price": null,
+                "brand": "",
+                "unit_price": "",
                 "total_price": "H",
-                "unit_price_corrected": null,
+                "unit_price_corrected": "",
                 "total_price_corrected": "I",
-                "subtotal": null,
-                "aiu": null,
-                "iva": null,
-                "factor": null,
-                "check": null
+                "subtotal": "",
+                "aiu": "",
+                "iva": "",
+                "factor": "",
+                "check": ""
               },
               "totals": [
                 {
                   "kind": "subtotal",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "H14",
                   "corrected": "I14",
-                  "check": null,
-                  "rate": null
+                  "check": "",
+                  "rate": ""
                 },
                 {
                   "kind": "iva",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "H15",
                   "corrected": "I15",
-                  "check": null,
-                  "rate": null
+                  "check": "",
+                  "rate": ""
                 },
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "H16",
                   "corrected": "I16",
-                  "check": null,
-                  "rate": null
+                  "check": "",
+                  "rate": ""
                 }
               ]
             },
             {
               "name_address": "J7",
               "columns": {
-                "brand": null,
-                "unit_price": null,
+                "brand": "",
+                "unit_price": "",
                 "total_price": "J",
-                "unit_price_corrected": null,
+                "unit_price_corrected": "",
                 "total_price_corrected": "K",
-                "subtotal": null,
-                "aiu": null,
-                "iva": null,
-                "factor": null,
-                "check": null
+                "subtotal": "",
+                "aiu": "",
+                "iva": "",
+                "factor": "",
+                "check": ""
               },
               "totals": [
                 {
                   "kind": "subtotal",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "J14",
                   "corrected": "K14",
-                  "check": null,
-                  "rate": null
+                  "check": "",
+                  "rate": ""
                 },
                 {
                   "kind": "iva",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "J15",
                   "corrected": "K15",
-                  "check": null,
-                  "rate": null
+                  "check": "",
+                  "rate": ""
                 },
                 {
                   "kind": "total",
-                  "label_address": null,
+                  "label_address": "",
                   "offered": "J16",
                   "corrected": "K16",
-                  "check": null,
-                  "rate": null
+                  "check": "",
+                  "rate": ""
                 }
               ]
             }

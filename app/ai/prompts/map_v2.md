@@ -23,9 +23,11 @@ Eres un analista de compras que lee la hoja de revisión aritmética de un infor
 **`tables`**: una por tabla de ítems, en orden (`t1`, `t2`…).
 
 - `header_rows`: filas de encabezado (incluida la de nombres de proveedor).
-- `item_rows`: primera y última fila de ítems. Sin encabezados, totales ni notas.
-- `group`: grupo de adjudicación de la tabla (`"1"`, `"2"`…) solo si las tablas de la hoja son de grupos distintos (lo dice su título o su fila de total). Si toda la hoja es de un grupo, `null`.
-- `title_address` y `site_address`: celda del título de la tabla y de la sede o región, si existen.
+- `item_rows`: primera y última fila de ítems. Sin encabezados, totales ni notas. Las filas de capítulo o subtítulo entre los ítems (sin cantidad, p. ej. "1 Obras civiles", "Caseta de relés") pueden quedar dentro del rango: el programa las omite.
+- `group`: grupo de adjudicación de la tabla (`"1"`, `"2"`…) solo si las tablas de la hoja son de grupos distintos. Si toda la hoja es de un grupo, `""`.
+  - Busca el grupo en el título de la tabla, en su fila de total ("TOTAL GRUPO 1", "VALOR TOTAL … GEB") o en sus encabezados.
+  - Si dos tablas repiten los mismos ítems, mira la regla 7.
+- `title_address` y `site_address`: celda del título de la tabla y de la sede o región; `""` si no existen.
 - `item_columns`:
   - `description` (obligatoria), `item_no`, `unit`.
   - `tariff_type`: tipo de tarifa o de servicio ("TIPO DE TARIFA", "MENSUAL", "USUARIO MES").
@@ -33,24 +35,24 @@ Eres un analista de compras que lee la hoja de revisión aritmética de un infor
   - `detail`: especificaciones o referencias del ítem que no son la descripción.
 - `providers`: un bloque por proveedor.
   - `name_address`: la celda con el nombre del proveedor.
-  - `columns` (null si el bloque no la tiene):
+  - `columns` (`""` si el bloque no la tiene):
     - `unit_price`: valor unitario ofertado. `total_price`: valor total ofertado del ítem (si existe "valor tarifa total" con IVA, esa es `total_price`).
     - `subtotal`: valor del ítem antes de impuestos cuando la hoja lo separa ("valor mes de servicios"). `aiu`, `iva`: valores por ítem.
     - `unit_price_corrected`: "valor unitario redondeado". `total_price_corrected`: "corrección aritmética", "valor total redondeado".
     - `check`: columna OK/ERROR. `brand`: marca ofertada. `factor`: factor multiplicador.
   - `totals`: las filas de total de ese proveedor en la tabla, con la celda exacta de cada valor:
-    - `kind`: `subtotal`, `iva`, `aiu`, `total`, `partial` (total de una parte de los ítems, p. ej. "servicios regulados") u `other`.
+    - `kind`: `subtotal` (costos directos, antes de impuestos), `iva`, `aiu` (AIU en una sola fila), `administration`, `utility`, `iva_on_utility` (IVA sobre la utilidad), `total`, `partial` (total de una parte de los ítems, p. ej. "servicios regulados") u `other`.
     - `offered` y `corrected`: celdas del valor ofertado y del corregido en esa fila. Pueden estar en columnas distintas a las de los ítems (p. ej. el subtotal bajo la columna del unitario).
-    - `check`: celda OK/ERROR de esa fila. `rate`: celda con la tasa (0,19 o 19 %) si existe. `label_address`: celda de la etiqueta.
+    - `check`: celda OK/ERROR de esa fila. `rate`: celda con la tasa de ese proveedor (0,19 del IVA, 0,25 de administración, 0,05 de utilidad); la corregida si hay dos. `label_address`: celda de la etiqueta.
 - `confidence`: entre 0 y 1 para la tabla.
 
-**`sheet_totals`**: totales de toda la hoja por proveedor cuando suman varias tablas (IVA total, "valor total de la oferta"). Misma forma que `totals`, más `name_address` del proveedor (la de su bloque en la primera tabla).
+**`sheet_totals`**: totales de toda la hoja cuando suman varias tablas (IVA total, "valor total de la oferta"). Un bloque por proveedor con su `name_address` (la de su bloque en la primera tabla), `columns` todas en `""` y en `totals` solo esas filas de la hoja.
 
-**`currency`**: `COP`, `USD` o `EUR` según los encabezados o títulos ("USD", "COP", "COP$", "pesos"). El formato numérico es solo una pista: `$` se usa para pesos y para dólares. `evidence`: las celdas donde se ve.
+**`currency`**: `COP`, `USD` o `EUR` (`""` si no se sabe) según los encabezados o títulos ("USD", "COP", "COP$", "pesos"). El formato numérico es solo una pista: `$` se usa para pesos y para dólares. `currency_evidence`: las celdas donde se ve.
 
-**`iva_included`**: `false` si los precios son "antes de IVA" o "sin IVA"; `true` si dicen "IVA incluido"; `null` si no se sabe. `evidence`: las celdas.
+**`iva_included`**: `"no"` si los precios son "antes de IVA" o "sin IVA"; `"si"` si dicen "IVA incluido"; `""` si no se sabe.
 
-**`budget`**: la celda del presupuesto oficial de la hoja (y la de su etiqueta), o `null`.
+**`budget_address`** y **`budget_label_address`**: la celda del presupuesto oficial de la hoja y la de su etiqueta; `""` si no hay.
 
 **`missing_fields`**: campos críticos que no encontraste: proveedor, producto, cantidad, precio, moneda, grupo.
 
@@ -62,5 +64,9 @@ Eres un analista de compras que lee la hoja de revisión aritmética de un infor
 2. Las columnas de un proveedor no se cruzan con las de otro ni con las columnas comunes.
 3. Incluye los bloques de proveedores sin oferta (INVITADO, 0, vacíos u ocultos) igual que los demás: el programa los descarta.
 4. Las columnas ocultas no se ignoran: pueden tener datos.
-5. Si un bloque no tiene una columna (p. ej. solo trae total), deja ese campo en `null`; no lo rellenes con otra columna.
+5. Un campo de columna o de celda que no existe va como `""` (cadena vacía). Si un bloque no tiene una columna (p. ej. solo trae total), deja ese campo en `""`; no lo rellenes con otra columna.
 6. Confianza menor a 0,85 si dudas de una columna, de las filas de ítems o de la moneda. Si no puedes mapear la hoja, `status: "unresolved"`, `requires_human_review: true` y explica en `warnings`.
+7. **Ítems repetidos en la misma hoja:**
+   - Si cada repetición tiene **su propio total** de grupo o filial ("VALOR TOTAL … GEB" y "VALOR TOTAL … TGI"), son tablas de grupos distintos: una tabla por repetición, cada una con su `group` (el número si aparece, o `"1"`, `"2"`… en orden). Sin grupo, el mismo producto del mismo proveedor quedaría duplicado.
+   - Si las repeticiones están separadas por **encabezados de sede** ("PATIO DE 500KV", "PATIO DE 230KV") y comparten **un solo total**, es una sola tabla: incluye todas las filas en `item_rows`; el programa toma cada encabezado como la sede de los ítems que le siguen.
+8. En `columns`, `item_columns`, `detail` y `quantity` van solo letras de columna (`"B"`), nunca celdas (`"B9"`) ni rangos (`"B9:B11"`).

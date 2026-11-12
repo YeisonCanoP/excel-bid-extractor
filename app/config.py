@@ -29,8 +29,8 @@ class Settings(BaseSettings):
     effort_classify: Literal["low", "medium", "high"] = "low"
     max_tokens: int = 4096
     """Tope de la respuesta (no se cobra el tope, solo lo generado). Valores muy altos obligan a usar streaming."""
-    prompt_version: str = "classify-v4"
-    """Archivo de app/ai/prompts/ con las instrucciones (classify-v3 -> classify_v3.md)."""
+    prompt_version: str = "classify-v5"
+    """Archivo de app/ai/prompts/ con las instrucciones (classify-v5 -> classify_v5.md)."""
 
     # Mapa de celdas
     model_map: str = "claude-sonnet-5-5"
@@ -38,7 +38,9 @@ class Settings(BaseSettings):
     effort_map: Literal["low", "medium", "high"] = "medium"
     max_tokens_map: int = 32000
     """La respuesta incluye el razonamiento; con este tope la llamada usa streaming."""
-    prompt_map_version: str = "map-v1"
+    prompt_map_version: str = "map-v2"
+    map_attempts: int = 2
+    """Intentos por hoja: el segundo recibe los problemas del primero."""
 
     # Validaciones económicas
     tol_finding: float = 0.01

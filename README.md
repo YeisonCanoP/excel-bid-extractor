@@ -32,7 +32,7 @@ puede confiar la copia de los números.
 | Etapa | Qué hace | Estado |
 |---|---|---|
 | 1. Identificación de hojas | Claude clasifica cada hoja como `principal`, `apoyo` o `descartada`; se guarda el JSON limpio | ✅ En el pipeline y el CLI |
-| 2. Mapa de celdas | Claude ubica tablas, ítems, bloques por proveedor y totales de cada hoja principal | 🚧 Contrato listo; falta el mapeo con IA |
+| 2. Mapa de celdas | Claude ubica tablas, ítems, bloques por proveedor y totales de cada hoja principal | ✅ Mapeo con IA, verificación aritmética y reintento (`scripts/eval_maps.py`); falta conectarlo al pipeline |
 | 3. Extracción y validación | El código extrae cotizaciones, aplica la regla del evaluador y valida R1–R11 | ✅ Módulo `app/quotes` con pruebas; falta conectarlo al pipeline |
 | 4. Modelo destino | Relación con proveedores, productos y cotizaciones finales | Pendiente |
 
@@ -73,6 +73,7 @@ uv run python -m app.cli run --force                  # reprocesa lo ya procesad
 uv run python -m app.cli status                       # tabla de resultados
 uv run python -m app.cli reset                        # borra la base (pide confirmación; --yes para no pedirla)
 uv run pytest                                         # pruebas (no requieren MongoDB ni IA)
+uv run python -m scripts.eval_maps --real            # mapeo con IA de muestras y Excel reales (con costo)
 ```
 
 Un archivo ya procesado no se vuelve a procesar: el `_id` del documento es el sha256 del archivo.
@@ -99,7 +100,19 @@ asigna un rol en una sola llamada por libro:
 
 Si Foundry no está disponible, el clasificador por reglas devuelve el mismo JSON (`CLASSIFIER=rules`).
 
-### 2. Regla de corrección del evaluador
+### 2. Mapa de celdas
+
+Por cada hoja principal, Claude recibe una cuadrícula compacta (una línea por fila, solo celdas con datos) y
+devuelve dónde está cada dato: tablas, filas de ítems, columnas comunes, bloques por proveedor y filas de total.
+El mapa se verifica antes de usarlo:
+
+1. **Estructura:** direcciones dentro de la hoja, nombres de proveedor, columnas sin cruces, moneda.
+2. **Prueba aritmética:** el mapa se aplica en seco y las reglas de integridad deben cuadrar con las cuentas del
+   evaluador. Si una columna está corrida, no cuadran.
+3. **Reintento:** si algo falla, Claude recibe el mapa anterior con los problemas exactos. Si tampoco cuadra,
+   la hoja pasa a revisión humana.
+
+### 3. Regla de corrección del evaluador
 
 Las celdas corregidas del Excel tienen la regla escrita en su fórmula, y el código la reproduce:
 
@@ -111,7 +124,7 @@ Las celdas corregidas del Excel tienen la regla escrita en su fórmula, y el có
 
 Los decimales `d` se leen de cada fórmula `ROUND(…, d)`; sin fórmula, 0 para COP y 2 para otras monedas.
 
-### 3. Validaciones
+### 4. Validaciones
 
 Hay dos tipos que no significan lo mismo:
 
@@ -123,10 +136,10 @@ Hay dos tipos que no significan lo mismo:
 | R1 | Hallazgo | cantidad × unitario ofertado = total ofertado |
 | R2 | Integridad | Nuestro recálculo da los valores corregidos del evaluador |
 | R3 | Integridad | La suma de los ítems da el subtotal de la tabla |
-| R4 | Integridad | subtotal + IVA = total |
+| R4 | Integridad | subtotal + IVA, AIU, administración y utilidad = total |
 | R5 | Integridad | Nuestro OK/ERROR coincide con el del evaluador |
 | R6 | Integridad | Campos críticos presentes (proveedor, producto, cantidad, precio, moneda) |
-| R7 | Integridad | Sin cotizaciones duplicadas (grupo + proveedor + producto + unidad) |
+| R7 | Integridad | Sin cotizaciones duplicadas (grupo + proveedor + ítem + producto + unidad con sede) |
 | R8 | Hallazgo | Desviación frente al presupuesto |
 | R9 | Hallazgo | Ítem cotizado en 0 |
 | R10 | Integridad | La suma de las tablas da el total de la oferta |
@@ -161,12 +174,15 @@ app/
 ├── excel/              openpyxl: lectura, ficha de cada hoja y JSON limpio
 ├── classifiers/        clasificación de hojas: ai | rules (misma interfaz) + validación
 ├── ai/                 cliente de Claude en Foundry + prompts versionados
+├── mapping/            mapa de celdas con IA: cuadrícula, estructura, prueba aritmética y reintento
 ├── quotes/             mapa + JSON limpio → cotizaciones
 │   ├── sheet.py          lectura por dirección, cada valor con su celda
 │   ├── normalize.py      ROUND de Excel, "no cotiza", llaves de proveedor y producto, unidad
-│   ├── item.py           cantidad, precios ofertados/corregidos y componentes de un ítem
+│   ├── item.py           valores de un ítem, si la fila es ítem y su estado (cotizado, en 0, sin oferta)
+│   ├── refs.py           identidad de la cotización: proveedor, producto y unidad
 │   ├── correction.py     regla del evaluador leída de las fórmulas
 │   ├── fact.py, taxes.py precio, total, IVA y AIU para el modelo destino
+│   ├── sites.py          sede de cada fila ("PATIO DE 230KV") para la unidad
 │   ├── extractor.py      orquesta la extracción de una hoja
 │   └── rules/            R1–R11 por ítem, por tabla y por hoja
 └── storage/            MongoDB: conexión, índices y repositorios
@@ -193,7 +209,9 @@ tests/                  pruebas unitarias y de punta a punta sobre los libros de
 | `FOUNDRY_RESOURCE`, `FOUNDRY_API_KEY` | Recurso de Microsoft Foundry y su clave (nunca va a git) |
 | `MODEL_CLASSIFY`, `EFFORT_CLASSIFY` | Deployment de Claude y nivel de esfuerzo |
 | `CONFIDENCE_AUTO` | Por debajo de este valor, una hoja principal pasa a revisión humana |
-| `PROMPT_VERSION` | Versión del prompt (`app/ai/prompts/`) |
+| `PROMPT_VERSION` | Versión del prompt de clasificación (`app/ai/prompts/`) |
+| `MODEL_MAP`, `EFFORT_MAP`, `MAX_TOKENS_MAP` | Deployment, esfuerzo y tope de tokens del mapa de celdas |
+| `PROMPT_MAP_VERSION`, `MAP_ATTEMPTS` | Prompt del mapa e intentos por hoja (el segundo recibe los problemas del primero) |
 | `TOL_FINDING` | Diferencia mínima para reportar un hallazgo (por defecto 0,01) |
 | `TOL_INTEGRITY_ABS`, `TOL_INTEGRITY_REL` | Tolerancia frente a los valores del evaluador (por defecto 1 y 0,0001) |
 

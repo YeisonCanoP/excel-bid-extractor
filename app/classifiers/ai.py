@@ -2,11 +2,10 @@
 
 import json
 
-from app.ai.client import PROVIDER, ClaudeAnswer, ClaudeClient, load_prompt
+from app.ai.client import ClaudeClient, load_prompt
 from app.classifiers.base import ClassificationOutcome
 from app.classifiers.rules import suggest_role
 from app.config import settings
-from app.domain.ai_run import AiRun
 from app.domain.classification import ClassificationResult
 from app.domain.document import SheetProfile
 
@@ -21,7 +20,7 @@ class AiClassifier:
 
     def __init__(self) -> None:
         self.system_prompt = load_prompt(settings.prompt_version)
-        self.claude = ClaudeClient(deployment=settings.model_classify, effort=settings.effort_classify)
+        self.claude = ClaudeClient(settings.model_classify, settings.effort_classify, settings.max_tokens)
 
     def classify(self, file_name: str, profiles: list[SheetProfile]) -> ClassificationOutcome:
         """Envía las fichas del libro y devuelve la clasificación junto con el registro de la llamada."""
@@ -31,23 +30,9 @@ class AiClassifier:
             schema=ClassificationResult,
         )
         result = answer.output if isinstance(answer.output, ClassificationResult) else None
-        return ClassificationOutcome(result=result, ai_run=self._ai_run(answer, result))
-
-    def _ai_run(self, answer: ClaudeAnswer, result: ClassificationResult | None) -> AiRun:
-        """Registro de la llamada, aunque la IA no haya devuelto una respuesta válida."""
-        return AiRun(
-            stage=STAGE,
-            provider=PROVIDER,
-            deployment=self.claude.deployment,
-            effort=self.claude.effort,
-            prompt_version=settings.prompt_version,
-            schema_version=SCHEMA_VERSION,
-            stop_reason=answer.stop_reason,
-            usage=answer.usage,
-            duration_ms=answer.duration_ms,
-            request_id=answer.request_id,
-            response=result.model_dump(mode="json") if result else None,
-        )
+        ai_run = self.claude.record(answer, stage=STAGE, prompt_version=settings.prompt_version,
+                                    schema_version=SCHEMA_VERSION)
+        return ClassificationOutcome(result=result, ai_run=ai_run)
 
 
 def build_user_message(file_name: str, profiles: list[SheetProfile]) -> str:

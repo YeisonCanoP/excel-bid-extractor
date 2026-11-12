@@ -12,6 +12,7 @@ from app.quotes import Tolerances, process_sheet
 from app.quotes.correction import Digits, correct_item, round_digits
 from app.quotes.item import ItemValues
 from app.quotes.normalize import excel_round, provider_key, unit_label
+from app.quotes.rules.common import excel_equal
 
 TOL = Tolerances()
 NO_COLUMNS = dict.fromkeys(["brand", "unit_price", "total_price", "unit_price_corrected", "total_price_corrected",
@@ -41,8 +42,8 @@ def _total(kind: str, row: int, offered: str | None, corrected: str | None, chec
 
 def _map(tables: list[dict], currency: str = "USD", sheet_totals: list[dict] | None = None) -> CellMapResult:
     return CellMapResult.model_validate({
-        "status": "complete", "currency": {"code": currency, "evidence": []},
-        "iva_included": {"value": False, "evidence": []}, "budget": None, "tables": tables,
+        "status": "complete", "currency": currency, "currency_evidence": [], "iva_included": "no",
+        "budget_address": "", "budget_label_address": "", "tables": tables,
         "sheet_totals": sheet_totals or [], "missing_fields": [], "confidence": 0.95, "warnings": [],
         "requires_human_review": False})
 
@@ -166,7 +167,7 @@ def _two_tables_map() -> CellMapResult:
     items = {"description": "B", "tariff_type": "C", "quantity": ["D", "E"]}
     tables = [_table((9, 9), items, [_provider("F6", columns, [_total("total", 12, "G", "I")])], "t1", "1"),
               _table((16, 16), items, [_provider("F6", columns, [_total("total", 18, "G", "I")])], "t2", "2")]
-    return _map(tables, currency="COP", sheet_totals=[_total("total", 20, "G", "I") | {"name_address": "F6"}])
+    return _map(tables, currency="COP", sheet_totals=[_provider("F6", {}, [_total("total", 20, "G", "I")])])
 
 
 def test_two_quantity_columns_and_sheet_total():
@@ -231,3 +232,65 @@ def test_unit_label():
     assert (unit_label("metros", None, None), unit_label(None, "USUARIO MES", None),
             unit_label("Unidad", "Preventivo", "Centro"), unit_label(None, None, None)) == (
         "METROS", "USUARIO MES", "UNIDAD PREVENTIVO CENTRO", "UND")
+
+
+# ---------- Capítulos y AIU al pie (administración, utilidad, IVA sobre utilidad) ----------
+
+CHAPTER_CELLS = {
+    "F6": "PROVEEDOR UNO SAS",
+    "B9": 1, "C9": "Obras civiles",
+    "B10": 1.1, "C10": "Excavación manual", "E10": 10, "F10": 100, "H10": (100, "=+ROUND(F10,0)"),
+    "I10": (1000, "=+ROUND($E10*H10,0)"),
+    "B11": 2, "C11": "Casetas",
+    "B12": 2.1, "C12": "Excavación manual", "E12": 5, "F12": 100, "H12": (100, "=+ROUND(F12,0)"),
+    "I12": (500, "=+ROUND($E12*H12,0)"),
+    "I14": 1500, "F15": 0.25, "I15": 375, "F16": 0.05, "I16": 75, "F17": 0.19, "I17": 14.25, "I18": 1964.25,
+}
+
+
+def _chapters_map() -> CellMapResult:
+    columns = {"unit_price": "F", "unit_price_corrected": "H", "total_price_corrected": "I"}
+    totals = [_total("subtotal", 14, None, "I"), _total("administration", 15, None, "I", rate="F"),
+              _total("utility", 16, None, "I", rate="F"), _total("iva_on_utility", 17, None, "I", rate="F"),
+              _total("total", 18, None, "I")]
+    items = {"item_no": "B", "description": "C", "quantity": ["E"]}
+    return _map([_table((9, 12), items, [_provider("F6", columns, totals)])], currency="COP")
+
+
+def test_chapter_rows_are_skipped_and_repeated_descriptions_are_not_duplicates():
+    result, failures = process_sheet(_sheet(CHAPTER_CELLS), _chapters_map(), document_id="doc", group=None,
+                                     tolerances=TOL)
+
+    assert failures == []
+    assert [q.product.item_no for q in result.quotations] == ["1.1", "2.1"]
+    assert any(v.rule == "R4" and v.passed for t in result.totals for v in t.validations)
+
+
+def test_aiu_footer_gives_administration_utility_and_iva_on_utility():
+    result, _ = process_sheet(_sheet(CHAPTER_CELLS), _chapters_map(), document_id="doc", group=None, tolerances=TOL)
+
+    fact = result.quotations[0].fact
+    assert fact is not None and fact.administracion and fact.utilidad and fact.iva_sobre_utilidad
+    assert (fact.iva.value, fact.administracion.value, fact.utilidad.value, fact.iva_sobre_utilidad.value) == (
+        0, 25, 5, 19)
+
+
+def test_excel_equality_ignores_noise_beyond_15_significant_digits():
+    assert excel_equal(20307105.000000004, 20307105)
+    assert not excel_equal(961.6, 962)
+    assert not excel_equal(3376.4900000000002, 3376.48)
+
+
+def test_site_headings_go_into_the_unit_so_repeated_items_are_not_duplicates():
+    cells = {"F6": "PROVEEDOR UNO SAS", "B9": "PATIO DE 500KV",
+             "B10": 1.1, "C10": "Aisladores", "D10": "Un", "E10": 27, "F10": 10, "I10": 270,
+             "B11": "PATIO DE 230KV",
+             "B12": 1.1, "C12": "Aisladores", "D12": "Un", "E12": 18, "F12": 10, "I12": 180}
+    items = {"item_no": "B", "description": "C", "unit": "D", "quantity": ["E"]}
+    cell_map = _map([_table((9, 12), items, [_provider("F6", {"unit_price": "F", "total_price_corrected": "I"}, [])])],
+                    currency="COP")
+
+    result, failures = process_sheet(_sheet(cells), cell_map, document_id="doc", group=None, tolerances=TOL)
+
+    assert failures == []
+    assert [q.unit.value for q in result.quotations] == ["UN PATIO DE 500KV", "UN PATIO DE 230KV"]

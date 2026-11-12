@@ -6,8 +6,8 @@ from app.domain.quotation import SourcedNumber, SourcedText
 from app.domain.validation import RuleKind, RuleResult
 
 FINDING, INTEGRITY = RuleKind.FINDING, RuleKind.INTEGRITY
-EXACT = 1e-9
-"""Diferencia que se considera igualdad exacta (la fórmula IF(ofertado = corregido) del evaluador)."""
+EXCEL_DIGITS = 15
+"""Cifras significativas con las que Excel compara dos números en IF(a = b)."""
 
 
 @dataclass(frozen=True)
@@ -27,10 +27,20 @@ def check_agreement(offered: SourcedNumber | None, corrected: SourcedNumber | No
     """R5: nuestra comparación exacta ofertado = corregido coincide con el OK/ERROR del evaluador."""
     if offered is None or corrected is None or check is None or check.value.upper() not in ("OK", "ERROR"):
         return None
-    ours = "OK" if abs(offered.value - corrected.value) < EXACT else "ERROR"
+    ours = "OK" if excel_equal(_original(offered), _original(corrected)) else "ERROR"
     return RuleResult(rule="R5", kind=INTEGRITY, passed=ours == check.value.upper(),
                       message=f"Evaluador: {check.value.upper()}; nuestra comparación: {ours}",
                       cells=cells_of(offered, corrected, check))
+
+
+def excel_equal(a: float, b: float) -> bool:
+    """Igualdad como la de Excel: 20307105.000000004 = 20307105, porque solo cuenta 15 cifras significativas."""
+    return f"{a:.{EXCEL_DIGITS}g}" == f"{b:.{EXCEL_DIGITS}g}"
+
+
+def _original(number: SourcedNumber) -> float:
+    """El valor tal como está en el Excel, sin quitarle el ruido (la comparación de Excel decide qué ignora)."""
+    return float(number.raw) if isinstance(number.raw, int | float) else number.value
 
 
 def cells_of(*values: SourcedNumber | SourcedText | None) -> list[str]:
