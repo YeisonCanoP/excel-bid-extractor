@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from app.domain.cell_map import ItemColumns, ProviderBlock, ProviderColumns, RowRange, Table, TotalRef
 from app.quotes.normalize import is_placeholder_provider
 from scripts.samples.cells import ItemRow, cell_for
-from scripts.samples.model import ROLE_LABELS, TEXT_ROLES, Block, Item, Layout, Provider
+from scripts.samples.model import ROLE_LABELS, TEXT_ROLES, Block, Item, ItemField, Layout, Provider, Role
 from scripts.samples.totals import total_rows, write_total
 from scripts.samples.writer import SheetWriter, shift
 
@@ -47,14 +47,15 @@ def _place(w: SheetWriter, layout: Layout, providers: list[Provider]) -> list[Bl
 
 
 def _write_headers(w: SheetWriter, layout: Layout, blocks: list[Block]) -> None:
-    labels = {"item_no": "ÍTEM", "description": "DESCRIPCIÓN", "unit": "UNIDAD", "tariff_type": "TIPO DE TARIFA"}
+    labels = {ItemField.ITEM_NO: "ÍTEM", ItemField.DESCRIPTION: "DESCRIPCIÓN", ItemField.UNIT: "UNIDAD",
+              ItemField.TARIFF_TYPE: "TIPO DE TARIFA"}
     for role, column in layout.item_columns.items():
         w.put(f"{column}{layout.header_row}", labels[role])
     for column, label in zip(layout.quantity_columns, layout.quantity_labels, strict=True):
         w.put(f"{column}{layout.header_row}", label)
     if layout.title_address:
         w.put(layout.title_address, layout.title)
-    w.put(f"{layout.item_columns['description']}{layout.name_row}", "PARTICIPANTE")
+    w.put(f"{layout.item_columns[ItemField.DESCRIPTION]}{layout.name_row}", "PARTICIPANTE")
     for block in blocks:
         w.put(_name_address(layout, block), block.provider.name)
         for role, column in block.columns.items():
@@ -63,8 +64,8 @@ def _write_headers(w: SheetWriter, layout: Layout, blocks: list[Block]) -> None:
 
 
 def _write_item(w: SheetWriter, layout: Layout, blocks: list[Block], row: int, item: Item) -> None:
-    values = {"item_no": row - layout.first_item_row + 1, "description": item.description, "unit": item.unit,
-              "tariff_type": item.tariff_type}
+    values = {ItemField.ITEM_NO: row - layout.first_item_row + 1, ItemField.DESCRIPTION: item.description,
+              ItemField.UNIT: item.unit, ItemField.TARIFF_TYPE: item.tariff_type}
     for role, column in layout.item_columns.items():
         w.put(f"{column}{row}", values[role])
     for column, quantity in zip(layout.quantity_columns, item.quantities, strict=True):
@@ -76,7 +77,7 @@ def _write_item(w: SheetWriter, layout: Layout, blocks: list[Block], row: int, i
 
 def _write_offer(w: SheetWriter, row: ItemRow) -> None:
     if row.offer.no_offer:
-        w.put(row.ref("unit_price"), "NO COTIZA")
+        w.put(row.ref(Role.UNIT_PRICE), "NO COTIZA")
         return
     for role in row.block.provider.roles:
         formula, value = cell_for(row, role)
@@ -94,7 +95,7 @@ def _write_totals(w: SheetWriter, layout: Layout, blocks: list[Block],
     totals: dict[str, list[TotalRef]] = {_name_address(layout, block): [] for block in offering}
     rows = total_rows(layout, item_count)
     for total in rows:
-        w.put(f"{layout.item_columns['description']}{total.row}", total.label)
+        w.put(f"{layout.item_columns[ItemField.DESCRIPTION]}{total.row}", total.label)
         for block in offering:
             refs = totals[_name_address(layout, block)]
             refs.append(write_total(w, layout, block, total, refs))
@@ -103,8 +104,9 @@ def _write_totals(w: SheetWriter, layout: Layout, blocks: list[Block],
 
 def _table_map(layout: Layout, blocks: list[Block], totals: dict[str, list[TotalRef]], item_count: int) -> Table:
     columns = layout.item_columns
-    item_columns = ItemColumns(item_no=columns.get("item_no"), description=columns["description"], detail=[],
-                               unit=columns.get("unit"), tariff_type=columns.get("tariff_type"),
+    item_columns = ItemColumns(item_no=columns.get(ItemField.ITEM_NO), description=columns[ItemField.DESCRIPTION],
+                               detail=[],
+                               unit=columns.get(ItemField.UNIT), tariff_type=columns.get(ItemField.TARIFF_TYPE),
                                quantity=list(layout.quantity_columns))
     providers = [ProviderBlock(name_address=_name_address(layout, block),
                                columns=ProviderColumns(**(NO_COLUMNS | block.columns)),

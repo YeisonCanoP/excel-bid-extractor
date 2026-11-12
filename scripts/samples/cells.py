@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from app.quotes.normalize import excel_round, without_noise
-from scripts.samples.model import AIU_RATE, IVA_RATE, Block, Item, Layout, Offer
+from scripts.samples.model import AIU_RATE, IVA_RATE, Block, Item, Layout, Offer, Role
 
 Cell = tuple[str | None, object]
 """(fórmula o None, valor)."""
@@ -59,7 +59,7 @@ class ItemRow:
     def corrected_total(self) -> float:
         if self.offer.unit is None:
             return excel_round(self.offered_total, self.layout.total_digits)
-        unit = self.corrected_unit if "unit_price_corrected" in self.block.columns else self.offer.unit
+        unit = self.corrected_unit if Role.UNIT_PRICE_CORRECTED in self.block.columns else self.offer.unit
         base = self.quantity * unit
         tax = base * AIU_RATE * IVA_RATE if self.layout.aiu else 0
         return excel_round(base + tax, self.layout.total_digits)
@@ -71,15 +71,16 @@ def cell_for(row: ItemRow, role: str) -> Cell:
 
 def _total_price(row: ItemRow) -> Cell:
     if row.layout.aiu:
-        return f"={row.ref('subtotal')}+{row.ref('iva')}", row.offered_total
+        return f"={row.ref(Role.SUBTOTAL)}+{row.ref(Role.IVA)}", row.offered_total
     return None, row.offered_total
 
 
 def _corrected_total(row: ItemRow) -> Cell:
     digits = row.layout.total_digits
     if row.offer.unit is None:
-        return f"=ROUND({row.ref('total_price')},{digits})", row.corrected_total
-    unit = row.ref("unit_price_corrected") if "unit_price_corrected" in row.block.columns else row.ref("unit_price")
+        return f"=ROUND({row.ref(Role.TOTAL_PRICE)},{digits})", row.corrected_total
+    unit_role = Role.UNIT_PRICE_CORRECTED if Role.UNIT_PRICE_CORRECTED in row.block.columns else Role.UNIT_PRICE
+    unit = row.ref(unit_role)
     base = f"{unit}*{row.quantity_expr}"
     expression = f"({base})+({base}*10%*19%)" if row.layout.aiu else base
     return f"=ROUND({expression},{digits})", row.corrected_total
@@ -88,18 +89,18 @@ def _corrected_total(row: ItemRow) -> Cell:
 def _check(row: ItemRow) -> Cell:
     offered = f"{row.block.offered_column}{row.row}"
     verdict = "OK" if row.offered_total == row.corrected_total else "ERROR"
-    return f'=IF({offered}={row.ref("total_price_corrected")},"OK","ERROR")', verdict
+    return f'=IF({offered}={row.ref(Role.TOTAL_PRICE_CORRECTED)},"OK","ERROR")', verdict
 
 
 BUILDERS: dict[str, Callable[[ItemRow], Cell]] = {
-    "brand": lambda row: (None, row.block.provider.brand),
-    "unit_price": lambda row: (None, row.offer.unit),
-    "total_price": _total_price,
-    "subtotal": lambda row: (f"={row.quantity_expr}*{row.ref('unit_price')}", row.subtotal),
-    "aiu": lambda row: (f"={row.ref('subtotal')}*10%", without_noise(row.subtotal * AIU_RATE)),
-    "iva": lambda row: (f"={row.ref('aiu')}*19%", row.iva),
-    "unit_price_corrected": lambda row: (f"=ROUND({row.ref('unit_price')},{row.layout.unit_digits})",
+    Role.BRAND: lambda row: (None, row.block.provider.brand),
+    Role.UNIT_PRICE: lambda row: (None, row.offer.unit),
+    Role.TOTAL_PRICE: _total_price,
+    Role.SUBTOTAL: lambda row: (f"={row.quantity_expr}*{row.ref(Role.UNIT_PRICE)}", row.subtotal),
+    Role.AIU: lambda row: (f"={row.ref(Role.SUBTOTAL)}*10%", without_noise(row.subtotal * AIU_RATE)),
+    Role.IVA: lambda row: (f"={row.ref(Role.AIU)}*19%", row.iva),
+    Role.UNIT_PRICE_CORRECTED: lambda row: (f"=ROUND({row.ref(Role.UNIT_PRICE)},{row.layout.unit_digits})",
                                          row.corrected_unit),
-    "total_price_corrected": _corrected_total,
-    "check": _check,
+    Role.TOTAL_PRICE_CORRECTED: _corrected_total,
+    Role.CHECK: _check,
 }

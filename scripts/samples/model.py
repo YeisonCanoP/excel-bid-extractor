@@ -1,23 +1,48 @@
 """Descripción de una tabla de revisión aritmética de muestra: ítems, proveedores y disposición."""
 
 from dataclasses import dataclass, field
+from enum import StrEnum
+
+
+class Role(StrEnum):
+    """Columnas de un bloque de proveedor (los mismos nombres del mapa de celdas)."""
+
+    BRAND = "brand"
+    UNIT_PRICE = "unit_price"
+    TOTAL_PRICE = "total_price"
+    SUBTOTAL = "subtotal"
+    AIU = "aiu"
+    IVA = "iva"
+    UNIT_PRICE_CORRECTED = "unit_price_corrected"
+    TOTAL_PRICE_CORRECTED = "total_price_corrected"
+    CHECK = "check"
+
+
+class ItemField(StrEnum):
+    """Columnas de la descripción del ítem."""
+
+    ITEM_NO = "item_no"
+    DESCRIPTION = "description"
+    UNIT = "unit"
+    TARIFF_TYPE = "tariff_type"
+
 
 AIU_RATE = 0.10
 IVA_RATE = 0.19
 
 ROLE_LABELS = {
-    "brand": "MARCA",
-    "unit_price": "VALOR UNITARIO",
-    "total_price": "VALOR TOTAL",
-    "subtotal": "VALOR MES DE SERVICIOS",
-    "aiu": "VALOR AIU",
-    "iva": "VALOR IVA",
-    "unit_price_corrected": "VALOR UNITARIO REDONDEADO",
-    "total_price_corrected": "CORRECCIÓN ARITMÉTICA",
-    "check": "VERIFICACIÓN",
+    Role.BRAND: "MARCA",
+    Role.UNIT_PRICE: "VALOR UNITARIO",
+    Role.TOTAL_PRICE: "VALOR TOTAL",
+    Role.SUBTOTAL: "VALOR MES DE SERVICIOS",
+    Role.AIU: "VALOR AIU",
+    Role.IVA: "VALOR IVA",
+    Role.UNIT_PRICE_CORRECTED: "VALOR UNITARIO REDONDEADO",
+    Role.TOTAL_PRICE_CORRECTED: "CORRECCIÓN ARITMÉTICA",
+    Role.CHECK: "VERIFICACIÓN",
 }
-TEXT_ROLES = {"brand", "check"}
-TOTAL_LABELS = {"subtotal": "SUBTOTAL", "iva": "IVA", "total": "VALOR TOTAL"}
+TEXT_ROLES = {Role.BRAND, Role.CHECK}
+TOTAL_LABELS = {Role.SUBTOTAL: "SUBTOTAL", Role.IVA: "IVA", "total": "VALOR TOTAL"}
 
 
 @dataclass(frozen=True)
@@ -63,7 +88,7 @@ class Layout:
     quantity_labels: tuple[str, ...]
     first_block: str
     currency: str
-    totals: tuple[str, ...] = ("subtotal", "iva", "total")
+    totals: tuple[str, ...] = (Role.SUBTOTAL, Role.IVA, "total")
     partials: tuple[tuple[str, int, int], ...] = ()
     """(etiqueta, primer ítem, último ítem): totales de una parte de los ítems."""
     group: str | None = None
@@ -106,8 +131,8 @@ class Block:
     @property
     def offered_column(self) -> str:
         """Columna del total ofertado; si el bloque no la tiene (cantidad 1), la del unitario."""
-        return self.columns.get("total_price") or self.columns["unit_price"]
+        return self.columns.get(Role.TOTAL_PRICE) or self.columns[Role.UNIT_PRICE]
 
     @property
     def corrected_column(self) -> str:
-        return self.columns["total_price_corrected"]
+        return self.columns[Role.TOTAL_PRICE_CORRECTED]

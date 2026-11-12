@@ -10,6 +10,7 @@ from rich.table import Table
 
 from app.domain.report import Report, ReportGroup
 
+PROVIDER = "Proveedor"
 MAX_FINDINGS = 15
 """Hallazgos que se listan; el resto se cuenta en el resumen."""
 
@@ -39,8 +40,8 @@ def _summary(report: Report) -> Table:
 def _offers(group: ReportGroup) -> Table:
     title = f"{group.sheet}" + (f" — grupo {group.group}" if group.group else "") + f" ({group.currency or '?'})"
     table = Table(title=title)
-    for column in ("Proveedor", "Ítems", "Subtotal", "IVA", "Total"):
-        table.add_column(column, justify="left" if column == "Proveedor" else "right")
+    for column in (PROVIDER, "Ítems", "Subtotal", "IVA", "Total"):
+        table.add_column(column, justify="left" if column == PROVIDER else "right")
     for provider in group.providers:
         quoted = Counter(item.status for item in provider.items)["cotizado"]
         table.add_row(provider.name, f"{quoted}/{len(provider.items)}", *(_money(provider.totals.get(kind))
@@ -50,7 +51,7 @@ def _offers(group: ReportGroup) -> Table:
 
 def _findings(report: Report) -> Table:
     table = Table(title=f"Hallazgos ({len(report.findings)})")
-    for column in ("Regla", "Hoja", "Proveedor", "Hallazgo"):
+    for column in ("Regla", "Hoja", PROVIDER, "Hallazgo"):
         table.add_column(column, overflow="fold")
     for finding in report.findings[:MAX_FINDINGS]:
         table.add_row(finding.rule, finding.sheet, finding.provider, finding.message)

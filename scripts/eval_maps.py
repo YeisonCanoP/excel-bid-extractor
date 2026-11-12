@@ -27,6 +27,8 @@ from app.mapping.mapper import AiMapper, MapOutcome
 from app.quotes import Tolerances, process_sheet
 from app.storage.repositories import DocumentRepository
 
+CLASSIFICATION = "classification"
+
 SAMPLES = Path("samples")
 PRICE_IN, PRICE_CACHE, PRICE_OUT = 2.0, 0.2, 10.0
 """US$ por millón de tokens (Sonnet 5.5): entrada, lectura de caché y salida."""
@@ -122,8 +124,8 @@ def flatten(cell_map: CellMapResult) -> dict[str, str]:
 def _classification(path: Path, profiles: list[SheetProfile]) -> ClassificationResult | None:
     """La clasificación de la IA guardada en MongoDB si el libro ya se procesó; si no, la de reglas."""
     document = _stored_document(path)
-    if document and document.get("classification"):
-        return ClassificationResult.model_validate(document["classification"] | {"warnings": [],
+    if document and document.get(CLASSIFICATION):
+        return ClassificationResult.model_validate(document[CLASSIFICATION] | {"warnings": [],
                                                                                  "requires_human_review": False})
     return RulesClassifier().classify(path.name, profiles).result
 
@@ -131,7 +133,7 @@ def _classification(path: Path, profiles: list[SheetProfile]) -> ClassificationR
 def _stored_document(path: Path) -> dict | None:
     """Documento ya procesado en MongoDB; None si no existe o si MongoDB no responde."""
     try:
-        return DocumentRepository().collection.find_one({"_id": file_sha256(path)}, {"classification": 1})
+        return DocumentRepository().collection.find_one({"_id": file_sha256(path)}, {CLASSIFICATION: 1})
     except PyMongoError:
         return None
 

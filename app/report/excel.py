@@ -18,9 +18,13 @@ HEADER_FONT = Font(bold=True, color="FFFFFF")
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
 MAX_WIDTH = 60
 
-QUOTATION_HEADERS = ("Hoja", "Grupo", "Proveedor", "Ítem", "Producto", "Unidad", "Cantidad", "Precio", "Total",
+SHEET, GROUP, PROVIDER, VALUE = "Hoja", "Grupo", "Proveedor", "Valor"
+QUOTATION_HEADERS = (SHEET, GROUP, PROVIDER, "Ítem", "Producto", "Unidad", "Cantidad", "Precio", "Total",
                      "IVA %", "Administración %", "Utilidad %", "IVA s/utilidad %", "Estado", "Origen")
-MONEY_COLUMNS = {"Cantidad", "Precio", "Total"}
+MONEY_COLUMNS = {"Cantidad", "Precio", "Total", VALUE}
+TOTAL_HEADERS = (SHEET, GROUP, PROVIDER, "Concepto", VALUE)
+FINDING_HEADERS = ("Regla", SHEET, PROVIDER, "Hallazgo", "Celdas")
+REVIEW_HEADERS = (SHEET, "Código", "Motivo")
 
 
 def report_path(folder: Path, file_name: str) -> Path:
@@ -33,10 +37,9 @@ def write_report(report: Report, path: Path) -> Path:
     workbook = Workbook()
     _summary_sheet(workbook.active, report)
     _table(workbook.create_sheet("Cotizaciones"), QUOTATION_HEADERS, _quotation_rows(report))
-    _table(workbook.create_sheet("Totales"), ("Hoja", "Grupo", "Proveedor", "Concepto", "Valor"), _total_rows(report))
-    _table(workbook.create_sheet("Hallazgos"), ("Regla", "Hoja", "Proveedor", "Hallazgo", "Celdas"),
-           _finding_rows(report))
-    _table(workbook.create_sheet("Revisión"), ("Hoja", "Código", "Motivo"), _review_rows(report))
+    _table(workbook.create_sheet("Totales"), TOTAL_HEADERS, _total_rows(report))
+    _table(workbook.create_sheet("Hallazgos"), FINDING_HEADERS, _finding_rows(report))
+    _table(workbook.create_sheet("Revisión"), REVIEW_HEADERS, _review_rows(report))
     workbook.save(path)
     return path
 
@@ -49,7 +52,7 @@ def _summary_sheet(sheet: Worksheet, report: Report) -> None:
             ("Hojas principales", s.principal_sheets), ("Hojas aceptadas", s.accepted_sheets),
             ("Hojas en revisión", s.review_sheets), ("Proveedores", s.providers), ("Productos", s.products),
             ("Cotizaciones", s.quotations), *((f"Hallazgos {rule}", count) for rule, count in s.findings.items())]
-    _table(sheet, ("Concepto", "Valor"), rows)
+    _table(sheet, ("Concepto", VALUE), rows)
 
 
 def _quotation_rows(report: Report) -> Iterable[Sequence[object]]:
@@ -93,6 +96,6 @@ def _format_columns(sheet: Worksheet, headers: Sequence[str]) -> None:
         letter = get_column_letter(index)
         values = [len(str(cell.value)) for cell in sheet[letter] if cell.value is not None]
         sheet.column_dimensions[letter].width = min(max(values, default=10) + 2, MAX_WIDTH)
-        if header in MONEY_COLUMNS or header == "Valor":
+        if header in MONEY_COLUMNS:
             for cell in sheet[letter][1:]:
                 cell.number_format = MONEY

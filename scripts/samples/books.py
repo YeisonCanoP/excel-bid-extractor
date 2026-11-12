@@ -11,7 +11,7 @@ from xlsxwriter.workbook import Workbook
 
 from app.domain.cell_map import ProviderBlock
 from scripts.samples.expected import SampleBook, cell_map
-from scripts.samples.model import NO_OFFER, Item, Layout, Offer, Provider
+from scripts.samples.model import NO_OFFER, Item, ItemField, Layout, Offer, Provider, Role
 from scripts.samples.sheets import (
     Process,
     write_empty_template,
@@ -25,10 +25,13 @@ from scripts.samples.totals import sheet_total
 from scripts.samples.writer import SheetWriter, new_workbook
 
 ARITHMETIC_REVIEW = "EVALUACIÓN ECONÓMICA - REVISIÓN ARITMÉTICA"
-GOODS_ROLES = ("brand", "unit_price", "total_price", "unit_price_corrected", "total_price_corrected", "check")
-AIU_ROLES = ("unit_price", "subtotal", "aiu", "iva", "total_price", "unit_price_corrected", "total_price_corrected",
-             "check")
-PLAIN_ROLES = ("unit_price", "total_price", "unit_price_corrected", "total_price_corrected", "check")
+ACME, BETA = "ACME ANDINA SAS", "BETA INDUSTRIAL SAS"
+PER_USER_MONTH = "USUARIO MES"
+CORRECTED = (Role.UNIT_PRICE_CORRECTED, Role.TOTAL_PRICE_CORRECTED, Role.CHECK)
+GOODS_ROLES = (Role.BRAND, Role.UNIT_PRICE, Role.TOTAL_PRICE, *CORRECTED)
+TOTAL_ONLY = (Role.TOTAL_PRICE, Role.TOTAL_PRICE_CORRECTED)
+AIU_ROLES = (Role.UNIT_PRICE, Role.SUBTOTAL, Role.AIU, Role.IVA, Role.TOTAL_PRICE, *CORRECTED)
+PLAIN_ROLES = (Role.UNIT_PRICE, Role.TOTAL_PRICE, Role.UNIT_PRICE_CORRECTED, Role.TOTAL_PRICE_CORRECTED, Role.CHECK)
 
 
 def _prices(seed: int, bases: list[float], decimals: int) -> list[float]:
@@ -55,10 +58,14 @@ def _goods_providers() -> list[Provider]:
     acme[1] = Offer(unit=acme[1].unit, total=round((acme[1].unit or 0) * 4 + 100, 2))  # total mal multiplicado
     beta = [*_offers(_prices(2, GOODS_BASES[:4], 3)), NO_OFFER, NO_OFFER]
     gamma = [*_offers(_prices(3, GOODS_BASES[:5], 2)), Offer(unit=0)]  # precio en 0
-    return [Provider("ACME ANDINA SAS", GOODS_ROLES, tuple(acme), brand="Marca A"),
-            Provider("BETA INDUSTRIAL SAS", GOODS_ROLES, tuple(beta), brand="Marca B"),
+    return [Provider(ACME, GOODS_ROLES, tuple(acme), brand="Marca A"),
+            Provider(BETA, GOODS_ROLES, tuple(beta), brand="Marca B"),
             Provider("GAMMA TECNOLOGÍA LTDA", GOODS_ROLES, tuple(gamma), brand="Marca C"),
             Provider("INVITADO", GOODS_ROLES)]
+
+
+GOODS_LAYOUT = Layout("t1", 9, {ItemField.ITEM_NO: "B", ItemField.DESCRIPTION: "C", ItemField.UNIT: "F"}, ("G",),
+                      ("CANTIDAD",), "H", "USD", unit_digits=2, total_digits=0, iva_rate_cell=True)
 
 
 def build_goods(folder: Path) -> SampleBook:
@@ -66,15 +73,13 @@ def build_goods(folder: Path) -> SampleBook:
     with new_workbook(folder / book.file_name) as workbook:
         w = SheetWriter(workbook, "Revisión aritmética")
         write_title(w, GOODS, ARITHMETIC_REVIEW)
-        layout = Layout("t1", 9, {"item_no": "B", "description": "C", "unit": "F"}, ("G",), ("CANTIDAD",), "H",
-                        "USD", unit_digits=2, total_digits=0, iva_rate_cell=True)
-        result = write_table(w, layout, GOODS_ITEMS, _goods_providers())
+        result = write_table(w, GOODS_LAYOUT, GOODS_ITEMS, _goods_providers())
         budget = _write_budget(w, GOODS, result.last_row)
         book.add_principal(w.name, cell_map("USD", [result.table], budget=budget), result.quotations, ["R1", "R9"])
         write_empty_template(workbook, "Revisión aritmética (plantilla)", GOODS)
         write_support_sheet(workbook, "Detalle de ítems", "REVISIÓN ARITMÉTICA - DETALLE DE ÍTEMS",
                             [(i.description, "Según ficha técnica", i.quantities[0]) for i in GOODS_ITEMS])
-        write_fillers(workbook, GOODS, ["ACME ANDINA SAS", "BETA INDUSTRIAL SAS", "GAMMA TECNOLOGÍA LTDA"])
+        write_fillers(workbook, GOODS, [ACME, BETA, "GAMMA TECNOLOGÍA LTDA"])
     book.apoyo.append("Detalle de ítems")
     return book
 
@@ -89,7 +94,7 @@ SERVICE_GROUPS = {
           Item("Operario de mantenimiento", (2,)), Item("Supervisor de cafetería", (1,))],
 }
 SERVICE_BASES = [3_200_000.0, 3_650_000.0, 5_400_000.0, 2_900_000.0]
-SERVICE_PROVIDERS = ["ACME ANDINA SAS", "BETA INDUSTRIAL SAS", "GAMMA SERVICIOS LTDA", "DELTA LIMPIEZA SAS"]
+SERVICE_PROVIDERS = [ACME, BETA, "GAMMA SERVICIOS LTDA", "DELTA LIMPIEZA SAS"]
 OCCASIONAL_SERVICES = ["Jornada adicional de aseo", "Lavado de fachada", "Desinfección de áreas", "Limpieza de vidrios"]
 OCCASIONAL_BASES = [180_000.0, 2_400_000.0, 650_000.0, 420_000.0]
 
@@ -110,7 +115,7 @@ def _write_service_group(workbook: Workbook, book: SampleBook, group: str) -> No
     w = SheetWriter(workbook, f"REV ARIT GRUPO {group}")
     write_title(w, SERVICES, f"REVISIÓN ARITMÉTICA - GRUPO {group}")
     partials = (("TOTAL SERVICIOS DIURNOS", 0, 1), ("TOTAL SERVICIOS NOCTURNOS Y OTROS", 2, 3)) if group == "2" else ()
-    layout = Layout("t1", 9, {"item_no": "A", "description": "C"}, ("D",), ("CANTIDAD",), "E", "COP",
+    layout = Layout("t1", 9, {ItemField.ITEM_NO: "A", ItemField.DESCRIPTION: "C"}, ("D",), ("CANTIDAD",), "E", "COP",
                     totals=("total",), partials=partials, aiu=True)
     result = write_table(w, layout, items, _service_providers(group, items))
     book.add_principal(w.name, cell_map("COP", [result.table]), result.quotations, ["R11"])
@@ -142,9 +147,9 @@ def _consulting_providers() -> list[Provider]:
     beta = tuple(Offer(total=p) for p in _prices(22, CONSULTING_BASES, 2))
     gamma = tuple(Offer(total=p) for p in _prices(23, CONSULTING_BASES, 2))
     beta_iva = round(sum(o.total or 0 for o in beta) * 0.19 / 10, 2)  # IVA con un dígito de menos
-    return [Provider("ACME ANDINA SAS", ("unit_price", "total_price_corrected"), acme),
-            Provider("BETA CONSULTORES SAS", ("total_price", "total_price_corrected"), beta, iva_offered=beta_iva),
-            Provider("GAMMA ASESORES LTDA", ("total_price", "total_price_corrected"), gamma)]
+    return [Provider(ACME, (Role.UNIT_PRICE, Role.TOTAL_PRICE_CORRECTED), acme),
+            Provider("BETA CONSULTORES SAS", TOTAL_ONLY, beta, iva_offered=beta_iva),
+            Provider("GAMMA ASESORES LTDA", TOTAL_ONLY, gamma)]
 
 
 def build_consulting(folder: Path) -> SampleBook:
@@ -152,11 +157,11 @@ def build_consulting(folder: Path) -> SampleBook:
     with new_workbook(folder / book.file_name) as workbook:
         w = SheetWriter(workbook, "Evaluación oferta económica")
         write_title(w, CONSULTING, "EVALUACIÓN DE LA OFERTA ECONÓMICA")
-        layout = Layout("t1", 9, {"description": "C", "unit": "D"}, ("E",), ("CANT.",), "F", "COP")
+        layout = Layout("t1", 9, {ItemField.DESCRIPTION: "C", ItemField.UNIT: "D"}, ("E",), ("CANT.",), "F", "COP")
         result = write_table(w, layout, CONSULTING_ITEMS, _consulting_providers())
         budget = _write_budget(w, CONSULTING, result.last_row)
         book.add_principal(w.name, cell_map("COP", [result.table], budget=budget), result.quotations, ["R11"])
-        write_fillers(workbook, CONSULTING, ["ACME ANDINA SAS", "BETA CONSULTORES SAS", "GAMMA ASESORES LTDA"])
+        write_fillers(workbook, CONSULTING, [ACME, "BETA CONSULTORES SAS", "GAMMA ASESORES LTDA"])
     return book
 
 
@@ -164,15 +169,15 @@ def build_consulting(folder: Path) -> SampleBook:
 
 LICENSES = Process("PROC-2026-004", "Licenciamiento de software en la nube", 1_500_000_000, "COP")
 LICENSE_TABLES = {
-    "1": [Item("Licencia de gestión de proyectos", (150, 12), tariff_type="USUARIO MES"),
-          Item("Licencia de visor de planos", (150, 12), tariff_type="USUARIO MES"),
-          Item("Licencia de programación de obra", (25, 12), tariff_type="USUARIO MES")],
-    "2": [Item("Licencia de gestión de proyectos", (16, 12), tariff_type="USUARIO MES"),
-          Item("Licencia de visor de planos", (16, 12), tariff_type="USUARIO MES")],
+    "1": [Item("Licencia de gestión de proyectos", (150, 12), tariff_type=PER_USER_MONTH),
+          Item("Licencia de visor de planos", (150, 12), tariff_type=PER_USER_MONTH),
+          Item("Licencia de programación de obra", (25, 12), tariff_type=PER_USER_MONTH)],
+    "2": [Item("Licencia de gestión de proyectos", (16, 12), tariff_type=PER_USER_MONTH),
+          Item("Licencia de visor de planos", (16, 12), tariff_type=PER_USER_MONTH)],
 }
 LICENSE_TITLES = {"1": "GRUPO 1 - SEDE PRINCIPAL", "2": "GRUPO 2 - SEDE REGIONAL"}
 LICENSE_PROVIDERS = {
-    "ACME ANDINA SAS": [500_000.0, 45_000.0, 840_000.0],
+    ACME: [500_000.0, 45_000.0, 840_000.0],
     "BETA SOFTWARE SAS": [511_125.0, 46_466.0, 851_874.0],
 }
 
@@ -181,7 +186,8 @@ def _license_table(w: SheetWriter, group: str, first_row: int) -> TableResult:
     items = LICENSE_TABLES[group]
     providers = [Provider(name, PLAIN_ROLES, _offers(prices[:len(items)]))
                  for name, prices in LICENSE_PROVIDERS.items()]
-    layout = Layout(f"t{group}", first_row, {"item_no": "A", "description": "B", "tariff_type": "C"}, ("D", "E"),
+    item_columns = {ItemField.ITEM_NO: "A", ItemField.DESCRIPTION: "B", ItemField.TARIFF_TYPE: "C"}
+    layout = Layout(f"t{group}", first_row, item_columns, ("D", "E"),
                     ("CANTIDAD USUARIOS", "CANTIDAD MESES"), "F", "COP", totals=("total",), group=group,
                     title=LICENSE_TITLES[group])
     return write_table(w, layout, items, providers)

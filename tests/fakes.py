@@ -20,7 +20,7 @@ class FakeClaude(ClaudeClient):
     outputs: list[BaseModel | None] = field(default_factory=list)
     messages: list[str] = field(default_factory=list)
 
-    def ask(self, *, system: str, user: str, schema: type[BaseModel]) -> ClaudeAnswer:
+    def ask(self, *, system: str, user: str, schema: type[BaseModel]) -> ClaudeAnswer:  # noqa: ARG002
         self.messages.append(user)
         output = self.outputs.pop(0)
         return ClaudeAnswer(output=output, stop_reason="end_turn" if output else "refusal",

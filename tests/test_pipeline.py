@@ -77,7 +77,7 @@ def test_sheet_that_does_not_add_up_keeps_the_others_and_goes_to_review(database
     assert any("REV ARIT GRUPO 2" in reason for reason in report.review_reasons)
 
 
-def test_remap_only_maps_the_pending_sheets(database):
+def test_remap_only_maps_the_pending_sheets():
     shifted = _shifted(SERVICES, "REV ARIT GRUPO 2")
     path = SAMPLES / f"{SERVICES}.xlsx"
     first, _ = _pipeline(expected_map(SERVICES, "REV ARIT GRUPO 1"), shifted, shifted)
@@ -90,7 +90,7 @@ def test_remap_only_maps_the_pending_sheets(database):
     assert len(claude.messages) == 1  # solo la hoja pendiente
 
 
-def test_workbook_without_arithmetic_review_ends_in_review_with_a_report(database, tmp_path):
+def test_workbook_without_arithmetic_review_ends_in_review_with_a_report(tmp_path):
     path = tmp_path / "sin_revision.xlsx"
     workbook = Workbook()
     workbook.active["A1"], workbook.active["B1"] = "NÚMERO DEL PROCESO", "PROC-0001"

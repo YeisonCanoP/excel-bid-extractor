@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from app.domain.cell_map import ProviderBlock, ProviderColumns, TotalKind, TotalRef
 from app.quotes.normalize import excel_round, without_noise
-from scripts.samples.model import IVA_RATE, TOTAL_LABELS, Block, Layout
+from scripts.samples.model import IVA_RATE, TOTAL_LABELS, Block, Layout, Role
 from scripts.samples.writer import SheetWriter
 
 
@@ -90,7 +90,7 @@ def _total_with_iva(w: SheetWriter, layout: Layout, block: Block, total: TotalRo
 def _ref(w: SheetWriter, block: Block, total: TotalRow, *, check: bool) -> TotalRef:
     """Referencia del total; escribe la verificación OK/ERROR si el bloque la tiene."""
     offered_col, corrected_col = block.offered_column, block.corrected_column
-    check_col = block.columns.get("check")
+    check_col = block.columns.get(Role.CHECK)
     if check_col:
         w.formula(f"{check_col}{total.row}", f'=IF({offered_col}{total.row}={corrected_col}{total.row},"OK","ERROR")',
                   "OK" if check else "ERROR")
@@ -100,9 +100,9 @@ def _ref(w: SheetWriter, block: Block, total: TotalRow, *, check: bool) -> Total
 
 
 def _rate_cell(w: SheetWriter, layout: Layout, block: Block, row: int) -> str | None:
-    if not layout.iva_rate_cell or "unit_price" not in block.columns:
+    if not layout.iva_rate_cell or Role.UNIT_PRICE not in block.columns:
         return None
-    address = f"{block.columns['unit_price']}{row}"
+    address = f"{block.columns[Role.UNIT_PRICE]}{row}"
     w.put(address, IVA_RATE, "percent")
     return address
 

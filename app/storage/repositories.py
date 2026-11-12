@@ -8,9 +8,12 @@ from app.domain.ai_run import AiRun
 from app.domain.classification import DocumentClassification, SheetRole
 from app.domain.document import DocumentOutcome, DocumentStatus, SheetProfile, StageLog
 from app.domain.source_sheet import SourceSheet
-from app.storage.mongo import get_db
+from app.storage.mongo import get_db, of_document
 
-RESET_FIELDS = ("sheet_count", "sheet_profiles", "classification", "error", "review_code", "review_reasons", "summary")
+FILE_NAME, PROFILES, STATUS = "file_name", "sheet_profiles", "status"
+WITHOUT_PROFILES = {PROFILES: 0}
+"""Proyección sin las fichas de hojas, que son pesadas."""
+RESET_FIELDS = ("sheet_count", PROFILES, "classification", "error", "review_code", "review_reasons", "summary")
 """Campos que se borran al reprocesar un documento."""
 
 
@@ -25,27 +28,27 @@ class DocumentRepository:
         self.collection = get_db().documents
 
     def get_status(self, document_id: str) -> DocumentStatus | None:
-        document = self.collection.find_one({"_id": document_id}, {"status": 1})
-        return DocumentStatus(document["status"]) if document else None
+        document = self.collection.find_one({"_id": document_id}, {STATUS: 1})
+        return DocumentStatus(document[STATUS]) if document else None
 
     def get(self, document_id: str) -> dict | None:
         return self.collection.find_one({"_id": document_id})
 
     def find_by_name(self, file_name: str) -> dict | None:
         """Documento por nombre de archivo (o por el inicio del nombre, p. ej. '40.')."""
-        exact = self.collection.find_one({"file_name": file_name}, {"sheet_profiles": 0})
-        return exact or self.collection.find_one({"file_name": {"$regex": f"^{re.escape(file_name)}"}},
-                                                 {"sheet_profiles": 0})
+        exact = self.collection.find_one({FILE_NAME: file_name}, WITHOUT_PROFILES)
+        prefix = {FILE_NAME: {"$regex": f"^{re.escape(file_name)}"}}
+        return exact or self.collection.find_one(prefix, WITHOUT_PROFILES)
 
     def list_summaries(self) -> list[dict]:
         """Todos los documentos sin las fichas de hojas (que son pesadas), ordenados por nombre."""
-        return list(self.collection.find({}, {"sheet_profiles": 0}).sort("file_name"))
+        return list(self.collection.find({}, WITHOUT_PROFILES).sort(FILE_NAME))
 
     def register(self, document_id: str, path: Path) -> None:
         """Crea el documento, o lo reinicia si se está reprocesando."""
         now = _now()
-        fields = {"file_name": path.name, "file_path": path.as_posix(), "size_bytes": path.stat().st_size,
-                  "status": DocumentStatus.RECEIVED, "stage_log": [], "updated_at": now}
+        fields = {FILE_NAME: path.name, "file_path": path.as_posix(), "size_bytes": path.stat().st_size,
+                  STATUS: DocumentStatus.RECEIVED, "stage_log": [], "updated_at": now}
         update = {"$set": fields, "$unset": dict.fromkeys(RESET_FIELDS, ""), "$setOnInsert": {"created_at": now}}
         self.collection.update_one({"_id": document_id}, update, upsert=True)
 
@@ -79,12 +82,12 @@ class SourceSheetRepository:
         self.collection = get_db().source_sheets
 
     def for_document(self, document_id: str, role: SheetRole) -> list[SourceSheet]:
-        query = {"document_id": document_id, "role": role.value}
+        query = {**of_document(document_id), "role": role.value}
         return [SourceSheet.model_validate(doc) for doc in self.collection.find(query).sort("sheet_index")]
 
     def replace_for_document(self, document_id: str, sheets: list[SourceSheet]) -> None:
         """Reemplaza todas las hojas del documento (así reprocesar no deja hojas viejas)."""
-        self.collection.delete_many({"document_id": document_id})
+        self.collection.delete_many(of_document(document_id))
         if sheets:
             self.collection.insert_many([sheet.model_dump(exclude_none=True) for sheet in sheets])
 
@@ -96,5 +99,5 @@ class AiRunRepository:
         self.collection = get_db().ai_runs
 
     def add(self, document_id: str, run: AiRun) -> str:
-        inserted = self.collection.insert_one({"document_id": document_id, **run.model_dump(), "created_at": _now()})
+        inserted = self.collection.insert_one({**of_document(document_id), **run.model_dump(), "created_at": _now()})
         return str(inserted.inserted_id)

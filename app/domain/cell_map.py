@@ -122,7 +122,7 @@ class CellMapResult(BaseModel):
     """
 
     status: Literal["complete", "partial", "unresolved"]
-    currency: CurrencyCode = Field(description="Moneda ISO de los valores, o \"\" si no se sabe")
+    currency: CurrencyCode = Field(description='Moneda ISO de los valores, o "" si no se sabe')
     currency_evidence: list[Address] = Field(description="Celdas de donde sale la moneda (encabezados, títulos)")
     iva_included: YesNo = Field(description="'si' si los precios incluyen IVA; 'no' si son antes de/sin IVA")
     budget_address: Address = Field(description="Celda con el valor del presupuesto oficial")

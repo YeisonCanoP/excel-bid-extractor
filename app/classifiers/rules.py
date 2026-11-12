@@ -38,7 +38,8 @@ def suggest_role(profile: SheetProfile) -> SheetRole:
 class RulesClassifier:
     name = "rules"
 
-    def classify(self, file_name: str, profiles: list[SheetProfile]) -> ClassificationOutcome:
+    def classify(self, file_name: str, profiles: list[SheetProfile]) -> ClassificationOutcome:  # noqa: ARG002
+        """Misma interfaz que el clasificador con IA; las reglas solo miran las fichas, no el nombre del archivo."""
         sheets = [self._classify_sheet(profile) for profile in profiles]
         has_principal = any(sheet.role == SheetRole.PRINCIPAL for sheet in sheets)
         result = ClassificationResult(sheets=sheets, warnings=[], requires_human_review=not has_principal)

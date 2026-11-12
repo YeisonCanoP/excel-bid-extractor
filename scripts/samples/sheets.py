@@ -7,6 +7,8 @@ from xlsxwriter.workbook import Workbook
 
 from scripts.samples.writer import SheetWriter, shift
 
+PROVIDER, QUANTITY = "PROVEEDOR", "CANTIDAD"
+
 
 @dataclass(frozen=True)
 class Process:
@@ -31,9 +33,9 @@ def write_fillers(workbook: Workbook, process: Process, providers: list[str]) ->
         general.put(f"B{row}", label)
         general.put(f"C{row}", value)
     contacts = [(name, f"900.000.{i:03d}-{i % 10}", f"contacto{i}@ejemplo.com") for i, name in enumerate(providers)]
-    _provider_table(workbook, "Participantes", ("PROVEEDOR", "NIT", "CORREO"), contacts)
-    _provider_table(workbook, "Evaluación jurídica", ("PROVEEDOR", "RESULTADO"), [(n, "CUMPLE") for n in providers])
-    _provider_table(workbook, "Puntaje económico", ("PROVEEDOR", "PUNTAJE TOTAL"),
+    _provider_table(workbook, "Participantes", (PROVIDER, "NIT", "CORREO"), contacts)
+    _provider_table(workbook, "Evaluación jurídica", (PROVIDER, "RESULTADO"), [(n, "CUMPLE") for n in providers])
+    _provider_table(workbook, "Puntaje económico", (PROVIDER, "PUNTAJE TOTAL"),
                     [(name, 1000 - 25 * i) for i, name in enumerate(providers)])
 
 
@@ -41,7 +43,7 @@ def write_empty_template(workbook: Workbook, name: str, process: Process) -> Non
     """Plantilla oculta con la estructura de una revisión aritmética, pero sin valores."""
     w = SheetWriter(workbook, name, hidden=True)
     write_title(w, process, "EVALUACIÓN ECONÓMICA - REVISIÓN ARITMÉTICA")
-    for column, label in zip("BCDEFGH", ("ÍTEM", "DESCRIPCIÓN", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL",
+    for column, label in zip("BCDEFGH", ("ÍTEM", "DESCRIPCIÓN", QUANTITY, "VALOR UNITARIO", "VALOR TOTAL",
                                           "CORRECCIÓN ARITMÉTICA", "VERIFICACIÓN"), strict=True):
         w.put(f"{column}8", label)
     for row in range(9, 13):
@@ -54,7 +56,7 @@ def write_support_sheet(workbook: Workbook, name: str, title: str, rows: list[tu
     """Hoja de apoyo: menciona la revisión aritmética y trae cantidades, pero no tiene corrección."""
     w = SheetWriter(workbook, name)
     w.put("B2", title)
-    for column, label in zip("BCD", ("DESCRIPCIÓN", "ESPECIFICACIÓN", "CANTIDAD"), strict=True):
+    for column, label in zip("BCD", ("DESCRIPCIÓN", "ESPECIFICACIÓN", QUANTITY), strict=True):
         w.put(f"{column}4", label)
     for row, values in enumerate(rows, start=5):
         for column, value in zip("BCD", values, strict=True):
@@ -67,7 +69,7 @@ def write_tariff_sheet(workbook: Workbook, name: str, title: str, services: list
     w = SheetWriter(workbook, name)
     w.put("B2", title)
     w.put("B4", "PARTICIPANTE")
-    for column, label in (("B", "DESCRIPCIÓN DEL SERVICIO"), ("C", "CANTIDAD")):
+    for column, label in (("B", "DESCRIPCIÓN DEL SERVICIO"), ("C", QUANTITY)):
         w.put(f"{column}5", label)
     for index, (provider, prices) in enumerate(tariffs.items()):
         column = shift("D", index)

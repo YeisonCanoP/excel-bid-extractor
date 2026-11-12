@@ -33,11 +33,10 @@ def _sheet(cells: dict[str, object]) -> SourceSheet:
                        rows=[Row(row=r, cells=c) for r, c in sorted(rows.items())], created_at=datetime.now(UTC))
 
 
-def _total(kind: str, row: int, offered: str | None, corrected: str | None, check: str | None = None,
-           rate: str | None = None) -> dict:
-    return {"kind": kind, "label_address": None, "offered": offered and f"{offered}{row}",
-            "corrected": corrected and f"{corrected}{row}", "check": check and f"{check}{row}",
-            "rate": rate and f"{rate}{row}"}
+def _total(kind: str, row: int, offered: str | None, corrected: str | None, *check: str, rate: str = "") -> dict:
+    """Fila de total: columnas de ofertado, corregido, verificación (opcional) y tasa (opcional)."""
+    columns = {"offered": offered, "corrected": corrected, "check": check[0] if check else None, "rate": rate}
+    return {"kind": kind, "label_address": None, **{key: col and f"{col}{row}" for key, col in columns.items()}}
 
 
 def _map(tables: list[dict], currency: str = "USD", sheet_totals: list[dict] | None = None) -> CellMapResult:
